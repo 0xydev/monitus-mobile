@@ -6,6 +6,7 @@ import {Link, Stack} from "expo-router";
 import * as React from "react";
 import {useLiveQuery} from "drizzle-orm/expo-sqlite";
 
+
 import {Text} from "@/components/ui/text";
 import {habitTable} from "@/db/schema";
 import {Plus} from "@/components/Icons";
@@ -54,8 +55,9 @@ function ScreenContent() {
       <View className="flex-1 items-center justify-center bg-secondary/30">
         <Text className="text-destructive pb-2 ">Error Loading data</Text>
       </View>
-    );
+    )
   }
+
   return (
     <View className="flex flex-col basis-full bg-background  p-8">
       <Stack.Screen
@@ -70,7 +72,7 @@ function ScreenContent() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
           <View>
-            <Text className="text-lg">Hi There 👋</Text>
+            <Text className="text-lg"  >Hi There 👋</Text>
             <Text className="text-sm">
               This example use sql.js on Web and expo/sqlite on native
             </Text>

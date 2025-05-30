@@ -1,22 +1,21 @@
 import "./global.css";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { type Theme, ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
+import {BottomSheetModalProvider} from "@gorhom/bottom-sheet";
+import {type Theme, ThemeProvider} from "@react-navigation/native";
+import {SplashScreen, Stack} from "expo-router";
+import {StatusBar} from "expo-status-bar";
 import * as React from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { PortalHost } from "@/components/primitives/portal";
-import { DatabaseProvider } from "@/db/provider";
-import { setAndroidNavigationBar } from "@/lib/android-navigation-bar";
-import { NAV_THEME } from "@/lib/constants";
-import { useColorScheme } from "@/lib/useColorScheme";
-import { getItem, setItem } from "@/lib/storage";
-import { Platform } from "react-native";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
+import {PortalHost} from "@/components/primitives/portal";
+import {DatabaseProvider} from "@/db/provider";
+import {setAndroidNavigationBar} from "@/lib/android-navigation-bar";
+import {NAV_THEME} from "@/lib/constants";
+import {useColorScheme} from "@/lib/useColorScheme";
+import {getItem, setItem} from "@/lib/storage";
+import {Platform} from "react-native";
 
-const NAV_FONT_FAMILY = "Inter";
+const NAV_FONT_FAMILY = "Inter-Black";
 const LIGHT_THEME: Theme = {
   dark: false,
-  colors: NAV_THEME.light,
   fonts: {
     regular: {
       fontFamily: NAV_FONT_FAMILY,
@@ -35,10 +34,10 @@ const LIGHT_THEME: Theme = {
       fontWeight: "800",
     },
   },
+  colors: NAV_THEME.light,
 };
 const DARK_THEME: Theme = {
   dark: true,
-  colors: NAV_THEME.dark,
   fonts: {
     regular: {
       fontFamily: NAV_FONT_FAMILY,
@@ -57,6 +56,7 @@ const DARK_THEME: Theme = {
       fontWeight: "800",
     },
   },
+  colors: NAV_THEME.dark,
 };
 
 export {
@@ -68,20 +68,17 @@ export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
-// Prevent the splash screen from auto-hiding before getting the color scheme.
+// // Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
+  const {colorScheme, setColorScheme} = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
 
   React.useEffect(() => {
     (async () => {
       const theme = getItem("theme");
-      if (Platform.OS === "web") {
-        // Adds the background color to the html element to prevent white background on overscroll.
-        document.documentElement.classList.add("bg-background");
-      }
+
       if (!theme) {
         setAndroidNavigationBar(colorScheme);
         setItem("theme", colorScheme);
@@ -109,12 +106,12 @@ export default function RootLayout() {
   return (
     <>
       <DatabaseProvider>
-        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-          <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-          <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={colorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
+          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          <GestureHandlerRootView style={{flex: 1}}>
             <BottomSheetModalProvider>
-              <Stack >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{headerShown: false}} />
                 <Stack.Screen options={{
                   headerShadowVisible: false,
                 }} name="habits/archive" />
@@ -124,10 +121,12 @@ export default function RootLayout() {
               </Stack>
             </BottomSheetModalProvider>
           </GestureHandlerRootView>
-
         </ThemeProvider>
+
       </DatabaseProvider>
       <PortalHost />
+
+
     </>
 
   );

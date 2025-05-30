@@ -11,8 +11,8 @@ import {useCallback, useMemo, useState} from "react";
 import {useBottomSheetModal} from "@gorhom/bottom-sheet";
 import {getItem, setItem} from "@/lib/storage";
 
-import {useColorScheme} from "@/lib/useColorScheme";
-import {useTheme} from "next-themes";
+import {useColorScheme} from "nativewind";
+
 type ItemData = {
   title: string;
   subtitle: string;
@@ -44,9 +44,9 @@ function ThemeItem({item, onPress, selected}: ItemProps) {
 export const ThemeSettingItem = () => {
   const [selectedTheme, setSelectedTheme] = useState(getItem<"light" | "dark" | "system">("theme"),
   );
-  const {setColorScheme} = useColorScheme();
+  const {colorScheme, setColorScheme} = useColorScheme();
+
   const {dismiss} = useBottomSheetModal();
-  const {theme, setTheme} = useTheme()
 
   const themes: ItemData[] = useMemo(
     () => [
@@ -74,16 +74,11 @@ export const ThemeSettingItem = () => {
 
   const onSelect = useCallback(
     (value: "light" | "dark" | "system") => {
-      if (Platform.OS === "web") {
-        setTheme(value)
-      } else {
-        setColorScheme(value);
-        setItem("theme", value)
-        setSelectedTheme(value);
-
-      }
+      setColorScheme(value);
+      setItem("theme", value)
+      setSelectedTheme(value);
       dismiss()
-    }, [selectedTheme, theme, setTheme]
+    }, [selectedTheme, colorScheme, setColorScheme]
   )
   return (
     <BottomSheet >

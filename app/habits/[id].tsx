@@ -150,15 +150,15 @@ export default function FormScreen() {
     }
   };
 
-  // const handleArchiveHabit = async () => {
-  //   try {
-  //     await db?.update(habitTable).set({archived: true}).where(eq(habitTable.id, id)).execute();
-  //     router.replace("/")
-  //   } catch (error) {
-  //     console.error(error)
-  //   }
+  const handleArchiveHabit = async () => {
+    try {
+      await db?.delete(habitTable).where(eq(habitTable.id, id)).execute();
+      router.replace("/")
+    } catch (error) {
+      console.error(error)
+    }
 
-  // };
+  };
 
   async function handleSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -334,32 +334,32 @@ export default function FormScreen() {
           </View>
         </Form>
       </FormElement>
-      {/* <AlertDialog>
+      <AlertDialog>
         <AlertDialogTrigger asChild>
 
           <Button
-            className="shadow shadow-foreground/5 my-4 bg-background"
+            className="shadow shadow-foreground/5 my-4 bg-destructive"
           >
-            <Text>Archive</Text>
+            <Text>Delete</Text>
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to archive this habit ?
+              Are you sure you want to delete this habit ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>
               <Text>Cancel</Text>
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-foreground" onPress={handleArchiveHabit}>
-              <Text>Archive</Text>
+            <AlertDialogAction className="bg-destructive" onPress={handleArchiveHabit}>
+              <Text>Delete</Text>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog> */}
+      </AlertDialog>
     </ScrollView>
   );
 }

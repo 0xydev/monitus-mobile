@@ -72,7 +72,6 @@ const formSchema = createInsertSchema(habitTable, {
 });
 
 
-// TODO: refactor to use UI components
 
 export default function FormScreen() {
   const {db} = useDatabase();
@@ -126,7 +125,6 @@ export default function FormScreen() {
         options={{
           title: "New Habit",
           headerShadowVisible: true,
-          // headerRight: () => Platform.OS !== "web" && <Pressable onPress={() => router.dismiss()}><X /></Pressable>
         }}
       />
 

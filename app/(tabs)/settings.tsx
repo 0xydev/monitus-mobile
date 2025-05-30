@@ -1,14 +1,14 @@
 import * as React from 'react';
-import { Linking, Platform } from 'react-native';
-import List, { ListHeader } from "@/components/ui/list";
+import {Linking, Platform} from 'react-native';
+import List, {ListHeader} from "@/components/ui/list";
 import ListItem from "@/components/ui/list-item";
-import { Muted } from "@/components/ui/typography";
-import { ScrollView } from 'react-native-gesture-handler';
-import { Archive, Bell, BookOpen, Send, Shield, Star } from '@/lib/icons';
+import {Muted} from "@/components/ui/typography";
+import {ScrollView} from 'react-native-gesture-handler';
+import {Archive, Bell, BookOpen, Send, Shield, Star} from '@/lib/icons';
 import * as WebBrowser from "expo-web-browser";
 
-import { ThemeSettingItem } from '@/components/settings/ThemeItem';
-import { NotificationItem } from '@/components/settings/NotificationItem';
+import {ThemeSettingItem} from '@/components/settings/ThemeItem';
+import {NotificationItem} from '@/components/settings/NotificationItem';
 
 export default function Settings() {
   const openExternalURL = (url: string) => {
