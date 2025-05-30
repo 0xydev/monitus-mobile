@@ -12,8 +12,8 @@ For local-first example with remote sync please check our [article](https://www.
 
 ## 📚 What's inside
 
-- ⚡ [Expo v51](https://expo.dev) - Built with Expo for cross-platform support
-- ⚛️ [React Native v0.73.6](https://reactnative.dev) for building native apps using React
+- ⚡ [Expo v53](https://expo.dev) - Built with Expo for cross-platform support
+- ⚛️ [React Native v0.79.2](https://reactnative.dev) for building native apps using React
 - 💽 Local-first based on [Expo SQLite for](https://docs.expo.dev/versions/latest/sdk/sqlite/) for native and [Sqlite.js](https://github.com/sql-js/sql.js) for Web
 - 💽 Full integrated with [DrizzleORM](https://drizzle.dev) including live query
 - 💎 Integrate with [NativeWind v4](https://www.nativewind.dev), Tailwind CSS for React Native
