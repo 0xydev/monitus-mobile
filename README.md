@@ -67,4 +67,4 @@ See [LICENSE](LICENSE) for more information.
 
 ---
 
-[Expo starter](expostarter.com) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40y0x53)](https://twitter.com/y0x53)
+[Expo starter](expostarter.com) [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40y0x53)](https://twitter.com/expostarter)
