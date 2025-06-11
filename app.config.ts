@@ -32,7 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: {
     bundler: "metro",
-    output: "single",
+    output: "server",
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
@@ -43,6 +43,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     ["expo-sqlite"],
+    ["expo-font"],
   ],
   experiments: {
     typedRoutes: true,

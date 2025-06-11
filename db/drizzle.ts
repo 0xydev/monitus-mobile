@@ -6,11 +6,11 @@ import type { SQLJsDatabase } from "drizzle-orm/sql-js";
 import migrations from "./migrations/migrations";
 
 const expoDb = openDatabaseSync("database.db", { enableChangeListener: true });
-export const db = drizzle(expoDb);
+const db = drizzle(expoDb);
 
-export const initialize = (): Promise<SQLJsDatabase | ExpoSQLiteDatabase> => {
+export const initialize = (): Promise<ExpoSQLiteDatabase> => {
   return Promise.resolve(db);
 };
 export const useMigrationHelper = () => {
-  return useMigrations(db as ExpoSQLiteDatabase, migrations);
+  return useMigrations(db, migrations);
 };
