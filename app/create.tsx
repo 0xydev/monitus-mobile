@@ -1,12 +1,12 @@
-import {zodResolver} from "@hookform/resolvers/zod";
-import {createInsertSchema} from "drizzle-zod";
-import {Link, Stack, useRouter} from "expo-router";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createInsertSchema } from "drizzle-zod";
+import { Link, Stack, useRouter } from "expo-router";
 import * as React from "react";
-import {useForm} from "react-hook-form";
-import {Alert, Platform, Pressable, ScrollView, View} from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { useForm } from "react-hook-form";
+import { Alert, Platform, Pressable, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as z from "zod";
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormCheckbox,
@@ -19,8 +19,8 @@ import {
   FormSwitch,
   FormTextarea,
 } from "@/components/ui/form";
-import {Label} from "@/components/ui/label";
-import {RadioGroupItem} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { RadioGroupItem } from "@/components/ui/radio-group";
 import {
   SelectContent,
   SelectGroup,
@@ -29,29 +29,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {Text} from "@/components/ui/text";
-import {habitTable} from "@/db/schema";
-import {cn} from "@/lib/utils";
-import {useDatabase} from "@/db/provider";
-import {X} from "lucide-react-native";
+import { Text } from "@/components/ui/text";
+import { habitTable } from "@/db/schema";
+import { cn } from "@/lib/utils";
+import { useDatabase } from "@/db/provider";
+
 
 
 const HabitCategories = [
-  {value: "health", label: "Health And Wellness"},
-  {value: "personal-development", label: "Personal Development"},
-  {value: "social-and-relationshipts", label: "Social And Relationships"},
-  {value: "productivity", label: "Productivity"},
-  {value: "creativity", label: "Creativity"},
-  {value: "mindfulness", label: "Mindfulness"},
-  {value: "financial", label: "Financial"},
-  {value: "leisure", label: "Leisure"},
+  { value: "health", label: "Health And Wellness" },
+  { value: "personal-development", label: "Personal Development" },
+  { value: "social-and-relationshipts", label: "Social And Relationships" },
+  { value: "productivity", label: "Productivity" },
+  { value: "creativity", label: "Creativity" },
+  { value: "mindfulness", label: "Mindfulness" },
+  { value: "financial", label: "Financial" },
+  { value: "leisure", label: "Leisure" },
 ];
 
 const HabitDurations = [
-  {value: 5, label: "5 minutes"},
-  {value: 10, label: "10 minutes"},
-  {value: 15, label: "15 minutes"},
-  {value: 30, label: "30 minutes"},
+  { value: 5, label: "5 minutes" },
+  { value: 10, label: "10 minutes" },
+  { value: 15, label: "15 minutes" },
+  { value: 30, label: "30 minutes" },
 ];
 
 const formSchema = createInsertSchema(habitTable, {
@@ -62,7 +62,7 @@ const formSchema = createInsertSchema(habitTable, {
     message: "We need to know.",
   }),
   category: z.object(
-    {value: z.string(), label: z.string()},
+    { value: z.string(), label: z.string() },
     {
       invalid_type_error: "Please select a favorite email.",
     },
@@ -74,7 +74,7 @@ const formSchema = createInsertSchema(habitTable, {
 
 
 export default function FormScreen() {
-  const {db} = useDatabase();
+  const { db } = useDatabase();
   const router = useRouter();
 
   const scrollRef = React.useRef<ScrollView>(null);
@@ -86,7 +86,7 @@ export default function FormScreen() {
       name: "",
       description: "",
       duration: 5,
-      category: {value: "health", label: "Health And Wellness"},
+      category: { value: "health", label: "Health And Wellness" },
       enableNotifications: false,
     },
   });
@@ -101,7 +101,7 @@ export default function FormScreen() {
   async function handleSubmit(values: z.infer<typeof formSchema>) {
 
     try {
-      await db?.insert(habitTable).values({
+      await db!.insert(habitTable).values({
         ...values,
         category: values.category.value,
         duration: Number(values.duration),
@@ -119,7 +119,7 @@ export default function FormScreen() {
       className="bg-background"
 
       automaticallyAdjustContentInsets={false}
-      contentInset={{top: 12}}
+      contentInset={{ top: 12 }}
     >
       <Stack.Screen
         options={{
@@ -133,7 +133,7 @@ export default function FormScreen() {
           <FormField
             control={form.control}
             name="name"
-            render={({field}) => (
+            render={({ field }) => (
               <FormInput
                 label="Name"
                 placeholder="Habit name"
@@ -148,7 +148,7 @@ export default function FormScreen() {
           <FormField
             control={form.control}
             name="description"
-            render={({field}) => (
+            render={({ field }) => (
               <FormTextarea
                 label="Description"
                 placeholder="Habit for ..."
@@ -161,7 +161,7 @@ export default function FormScreen() {
           <FormField
             control={form.control}
             name="category"
-            render={({field}) => (
+            render={({ field }) => (
               <FormSelect
                 label="Category"
                 description="Select on of the habit description"
@@ -182,7 +182,7 @@ export default function FormScreen() {
                 </SelectTrigger>
                 <SelectContent
                   insets={contentInsets}
-                  style={{width: selectTriggerWidth}}
+                  style={{ width: selectTriggerWidth }}
                 >
                   <SelectGroup>
                     {HabitCategories.map((cat) => (
@@ -203,7 +203,7 @@ export default function FormScreen() {
           <FormField
             control={form.control}
             name="duration"
-            render={({field}) => {
+            render={({ field }) => {
               function onLabelPress(value: number | string) {
                 return () => {
                   form.setValue("duration", value);
@@ -224,11 +224,11 @@ export default function FormScreen() {
                         className={"flex-row gap-2 items-center"}
                       >
                         <RadioGroupItem
-                          aria-labelledby={`label-for-${ item.label }`}
+                          aria-labelledby={`label-for-${item.label}`}
                           value={item.value.toString()}
                         />
                         <Label
-                          nativeID={`label-for-${ item.label }`}
+                          nativeID={`label-for-${item.label}`}
                           className="capitalize"
                           onPress={onLabelPress(item.value)}
                         >
@@ -245,7 +245,7 @@ export default function FormScreen() {
           <FormField
             control={form.control}
             name="enableNotifications"
-            render={({field}) => (
+            render={({ field }) => (
               <FormSwitch
                 label="Enable reminder"
                 description="We will send you notification reminder."

@@ -1,17 +1,17 @@
-import {View, Alert} from "react-native";
-import {useScrollToTop} from "@react-navigation/native";
-import {FlashList} from "@shopify/flash-list";
-import {eq} from "drizzle-orm";
-import {Stack} from "expo-router";
+import { View, Alert } from "react-native";
+import { useScrollToTop } from "@react-navigation/native";
+import { FlashList } from "@shopify/flash-list";
+import { eq } from "drizzle-orm";
+import { Stack } from "expo-router";
 import * as React from "react";
-import {useLiveQuery} from "drizzle-orm/expo-sqlite";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 
-import {Text} from "@/components/ui/text";
-import {habitTable} from "@/db/schema";
-import {useDatabase} from "@/db/provider";
-import {HabitCard} from "@/components/habit";
-import type {Habit} from "@/lib/storage";
-import {Archive} from "@/lib/icons";
+import { Text } from "@/components/ui/text";
+import { habitTable } from "@/db/schema";
+import { useDatabase } from "@/db/provider";
+import { HabitCard } from "@/components/habit";
+import type { Habit } from "@/db/schema";
+import { Archive } from "@/lib/icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,11 +23,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {Button} from "@/components/ui";
+import { Button } from "@/components/ui";
 export default function Home() {
-  const {db} = useDatabase();
-  const {data: habits, error} = useLiveQuery(
-    db?.select().from(habitTable).where(eq(habitTable.archived, true)),
+  const { db } = useDatabase();
+  const { data: habits, error } = useLiveQuery(
+    db!.select().from(habitTable).where(eq(habitTable.archived, true)),
   );
 
   const ref = React.useRef(null);
@@ -68,7 +68,7 @@ export default function Home() {
 
   }
   const renderItem = React.useCallback(
-    ({item}: {item: Habit}) => <HabitCard onDelete={handleDeleteHabit} onRestore={handleRestoreHabit} {...item} />,
+    ({ item }: { item: Habit }) => <HabitCard onDelete={handleDeleteHabit} onRestore={handleRestoreHabit} {...item} />,
     [],
   );
 
@@ -103,7 +103,7 @@ export default function Home() {
         ItemSeparatorComponent={() => <View className="p-2" />}
         data={habits}
         renderItem={renderItem}
-        keyExtractor={(_, index) => `item-${ index }`}
+        keyExtractor={(_, index) => `item-${index}`}
         ListFooterComponent={<View className="py-4" />}
       />
       <AlertDialog>

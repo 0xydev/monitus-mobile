@@ -1,3 +1,7 @@
+import type { Theme } from "@react-navigation/native";
+
+const NAV_FONT_FAMILY = "Inter-Black";
+
 export const NAV_THEME = {
   light: {
     background: "hsl(0 0% 100%)", // background
@@ -15,4 +19,49 @@ export const NAV_THEME = {
     primary: "hsl(0 0% 98%)", // primary
     text: "hsl(0 0% 98%)", // foreground
   },
+};
+
+export const LIGHT_THEME: Theme = {
+  dark: false,
+  fonts: {
+    regular: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "400",
+    },
+    medium: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "500",
+    },
+    bold: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "700",
+    },
+    heavy: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "800",
+    },
+  },
+  colors: NAV_THEME.light,
+};
+export const DARK_THEME: Theme = {
+  dark: true,
+  fonts: {
+    regular: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "400",
+    },
+    medium: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "500",
+    },
+    bold: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "700",
+    },
+    heavy: {
+      fontFamily: NAV_FONT_FAMILY,
+      fontWeight: "800",
+    },
+  },
+  colors: NAV_THEME.dark,
 };

@@ -8,57 +8,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PortalHost } from "@/components/primitives/portal";
 import { DatabaseProvider } from "@/db/provider";
 import { setAndroidNavigationBar } from "@/lib/android-navigation-bar";
-import { NAV_THEME } from "@/lib/constants";
+import { DARK_THEME, LIGHT_THEME } from "@/lib/constants";
 import { useColorScheme } from "@/lib/useColorScheme";
 import { getItem, setItem } from "@/lib/storage";
-import { Platform } from "react-native";
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
+import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
+import { useEffect } from "react";
 
-const NAV_FONT_FAMILY = "Inter-Black";
-const LIGHT_THEME: Theme = {
-  dark: false,
-  fonts: {
-    regular: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "400",
-    },
-    medium: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "500",
-    },
-    bold: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "700",
-    },
-    heavy: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "800",
-    },
-  },
-  colors: NAV_THEME.light,
-};
-const DARK_THEME: Theme = {
-  dark: true,
-  fonts: {
-    regular: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "400",
-    },
-    medium: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "500",
-    },
-    bold: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "700",
-    },
-    heavy: {
-      fontFamily: NAV_FONT_FAMILY,
-      fontWeight: "800",
-    },
-  },
-  colors: NAV_THEME.dark,
-};
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -69,42 +25,39 @@ export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
-// // Prevent the splash screen from auto-hiding before getting the color scheme.
+// Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
-  const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
+
+  const [loaded, error] = useFonts({
+    Inter_400Regular,
+    Inter_600SemiBold,
+  });
 
   useFrameworkReady();
 
-  React.useEffect(() => {
-    (async () => {
-      const theme = getItem("theme");
-
-      if (!theme) {
-        setAndroidNavigationBar(colorScheme);
-        setItem("theme", colorScheme);
-        setIsColorSchemeLoaded(true);
-        return;
-      }
-      const colorTheme = theme === "dark" ? "dark" : "light";
-      setAndroidNavigationBar(colorTheme);
-      if (colorTheme !== colorScheme) {
-        setColorScheme(colorTheme);
-
-        setIsColorSchemeLoaded(true);
-        return;
-      }
-      setIsColorSchemeLoaded(true);
-    })().finally(() => {
-      SplashScreen.hideAsync();
-    });
+  useEffect(() => {
+    const theme = getItem("theme");
+    if (!theme) {
+      setAndroidNavigationBar(colorScheme);
+      setItem("theme", colorScheme);
+      return;
+    }
+    const colorTheme = theme === "dark" ? "dark" : "light";
+    setAndroidNavigationBar(colorTheme);
+    if (colorTheme !== colorScheme) {
+      setColorScheme(colorTheme);
+    }
   }, []);
 
-  if (!isColorSchemeLoaded) {
-    return null;
-  }
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
 
   return (
     <DatabaseProvider>

@@ -1,5 +1,5 @@
-import {zodResolver} from "@hookform/resolvers/zod";
-import {createInsertSchema} from "drizzle-zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createInsertSchema } from "drizzle-zod";
 import {
   Stack,
   useFocusEffect,
@@ -7,11 +7,11 @@ import {
   useRouter,
 } from "expo-router";
 import * as React from "react";
-import {useForm} from "react-hook-form";
-import {Alert, Pressable, ScrollView, View} from "react-native";
-import {useSafeAreaInsets} from "react-native-safe-area-context";
+import { useForm } from "react-hook-form";
+import { Alert, Pressable, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as z from "zod";
-import {eq} from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormCheckbox,
@@ -36,8 +36,8 @@ import {
   FormSwitch,
   FormTextarea,
 } from "@/components/ui/form";
-import {Label} from "@/components/ui/label";
-import {RadioGroupItem} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { RadioGroupItem } from "@/components/ui/radio-group";
 import {
   SelectContent,
   SelectGroup,
@@ -45,28 +45,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {Text} from "@/components/ui/text";
-import {useDatabase} from "@/db/provider";
-import {habitTable} from "@/db/schema";
-import {cn} from "@/lib/utils";
-import type {Habit} from "@/lib/storage";
+import { Text } from "@/components/ui/text";
+import { useDatabase } from "@/db/provider";
+import { habitTable } from "@/db/schema";
+import { cn } from "@/lib/utils";
+import type { Habit } from "@/db/schema";
 
 const HabitCategories = [
-  {value: "health", label: "Health And Wellness"},
-  {value: "personal-development", label: "Personal Development"},
-  {value: "social-and-relationshipts", label: "Social And Relationships"},
-  {value: "productivity", label: "Productivity"},
-  {value: "creativity", label: "Creativity"},
-  {value: "mindfulness", label: "Mindfulness"},
-  {value: "financial", label: "Financial"},
-  {value: "leisure", label: "Leisure"},
+  { value: "health", label: "Health And Wellness" },
+  { value: "personal-development", label: "Personal Development" },
+  { value: "social-and-relationshipts", label: "Social And Relationships" },
+  { value: "productivity", label: "Productivity" },
+  { value: "creativity", label: "Creativity" },
+  { value: "mindfulness", label: "Mindfulness" },
+  { value: "financial", label: "Financial" },
+  { value: "leisure", label: "Leisure" },
 ];
 
 const HabitDurations = [
-  {value: 5, label: "5 minutes"},
-  {value: 10, label: "10 minutes"},
-  {value: 15, label: "15 minutes"},
-  {value: 30, label: "30 minutes"},
+  { value: 5, label: "5 minutes" },
+  { value: 10, label: "10 minutes" },
+  { value: 15, label: "15 minutes" },
+  { value: 30, label: "30 minutes" },
 ];
 
 const formSchema = createInsertSchema(habitTable, {
@@ -79,7 +79,7 @@ const formSchema = createInsertSchema(habitTable, {
       message: "We need to know.",
     }),
   category: z.object(
-    {value: z.string(), label: z.string()},
+    { value: z.string(), label: z.string() },
     {
       invalid_type_error: "Please select category",
     },
@@ -91,12 +91,12 @@ const formSchema = createInsertSchema(habitTable, {
 // TODO: refactor to use UI components
 
 export default function FormScreen() {
-  const {db} = useDatabase();
+  const { db } = useDatabase();
   const router = useRouter();
   const scrollRef = React.useRef<ScrollView>(null);
   const insets = useSafeAreaInsets();
   const [habit, setHabit] = React.useState<Habit>();
-  const {id} = useLocalSearchParams<{id: string}>();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
   const [selectTriggerWidth, setSelectTriggerWidth] = React.useState(0);
   useFocusEffect(
@@ -129,8 +129,8 @@ export default function FormScreen() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: defaultValues,
-    values: defaultValues
+    defaultValues: defaultValues as z.infer<typeof formSchema>,
+    values: defaultValues as z.infer<typeof formSchema>,
   });
 
   const contentInsets = {
@@ -183,7 +183,7 @@ export default function FormScreen() {
       contentContainerClassName="p-6 mx-auto w-full max-w-xl"
       showsVerticalScrollIndicator={false}
       automaticallyAdjustContentInsets={false}
-      contentInset={{top: 12}}
+      contentInset={{ top: 12 }}
     >
       <Stack.Screen
         options={{
@@ -198,7 +198,7 @@ export default function FormScreen() {
             <FormField
               control={form.control}
               name="name"
-              render={({field}) => (
+              render={({ field }) => (
                 <FormInput
                   label="Name"
                   className="text-foreground"
@@ -214,7 +214,7 @@ export default function FormScreen() {
             <FormField
               control={form.control}
               name="description"
-              render={({field}) => (
+              render={({ field }) => (
                 <FormTextarea
                   label="Description"
 
@@ -228,15 +228,12 @@ export default function FormScreen() {
             <FormField
               control={form.control}
               name="category"
-              render={({field}) => {
+              render={({ field }) => {
                 return (
                   <FormSelect
                     label="Category"
                     description="Select on of the habit description"
                     {...field}
-
-
-
                   >
                     <SelectTrigger
                       onLayout={(ev) => {
@@ -253,7 +250,7 @@ export default function FormScreen() {
                     </SelectTrigger>
                     <SelectContent
                       insets={contentInsets}
-                      style={{width: selectTriggerWidth}}
+                      style={{ width: selectTriggerWidth }}
                     >
                       <SelectGroup>
                         {HabitCategories.map((cat) => (
@@ -275,7 +272,7 @@ export default function FormScreen() {
             <FormField
               control={form.control}
               name="duration"
-              render={({field}) => {
+              render={({ field }) => {
                 function onLabelPress(value: number) {
                   return () => {
                     form.setValue("duration", value);
@@ -296,11 +293,11 @@ export default function FormScreen() {
                           className={"flex-row gap-2 items-center"}
                         >
                           <RadioGroupItem
-                            aria-labelledby={`label-for-${ item.label }`}
+                            aria-labelledby={`label-for-${item.label}`}
                             value={item.value.toString()}
                           />
                           <Label
-                            nativeID={`label-for-${ item.label }`}
+                            nativeID={`label-for-${item.label}`}
                             className="capitalize"
                             onPress={onLabelPress(item.value)}
                           >
@@ -317,7 +314,7 @@ export default function FormScreen() {
             <FormField
               control={form.control}
               name="enableNotifications"
-              render={({field}) => (
+              render={({ field }) => (
                 <FormSwitch
                   label="Enable reminder"
                   description="We will send you notification reminder."
