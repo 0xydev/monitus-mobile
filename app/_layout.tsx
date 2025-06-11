@@ -12,6 +12,7 @@ import { NAV_THEME } from "@/lib/constants";
 import { useColorScheme } from "@/lib/useColorScheme";
 import { getItem, setItem } from "@/lib/storage";
 import { Platform } from "react-native";
+import { useFrameworkReady } from "@/hooks/useFrameworkReady";
 
 const NAV_FONT_FAMILY = "Inter-Black";
 const LIGHT_THEME: Theme = {
@@ -75,6 +76,8 @@ export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
 
+  useFrameworkReady();
+
   React.useEffect(() => {
     (async () => {
       const theme = getItem("theme");
@@ -104,28 +107,24 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <DatabaseProvider>
-        <ThemeProvider value={colorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
-          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <BottomSheetModalProvider>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ title: "Habits", headerShown: false }} />
-                <Stack.Screen options={{
-                  headerShadowVisible: false,
-                }} name="habits/archive" />
-                <Stack.Screen options={{
-                  headerShadowVisible: false,
-                }} name="habits/[id]" />
-              </Stack>
-            </BottomSheetModalProvider>
-          </GestureHandlerRootView>
-        </ThemeProvider>
-
-      </DatabaseProvider>
+    <DatabaseProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <BottomSheetModalProvider>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ title: "Habits", headerShown: false }} />
+              <Stack.Screen options={{
+                headerShadowVisible: false,
+              }} name="habits/archive" />
+              <Stack.Screen options={{
+                headerShadowVisible: false,
+              }} name="habits/[id]" />
+            </Stack>
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+      </ThemeProvider>
       <PortalHost />
-    </>
-
+    </DatabaseProvider>
   );
 }
