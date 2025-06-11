@@ -1,5 +1,7 @@
 # Expo Local-first Template  [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/cloudposse.svg?style=social&label=Follow%20%40expostarter)](https://twitter.com/expostarter)
 
+[Open in Bolt.new](https://bolt.new/~github.com/expo-starter/expo-local-first-template)
+
 <p align="center">
   <a href="https://expostarter.com/"><img src="assets/github-banner.png?raw=true" alt="Expo Starter Kit"></a>
 </p>

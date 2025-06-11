@@ -32,19 +32,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: {
     bundler: "metro",
-    output: "server",
+    output: "static",
     favicon: "./assets/images/favicon.png",
   },
-  plugins: [
-    [
-      "expo-router",
-      {
-        origin: "https://n",
-      },
-    ],
-    ["expo-sqlite"],
-    ["expo-font"],
-  ],
+  plugins: [["expo-router"], ["expo-sqlite"], ["expo-font"]],
   experiments: {
     typedRoutes: true,
     baseUrl: "/expo-local-first-template",

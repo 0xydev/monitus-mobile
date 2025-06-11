@@ -6,17 +6,13 @@
   "repository": "git@github.com:expo-starter/expo-template.git",
   "license": "Apache-2.0",
   "scripts": {
-    "dev": "expo start --dev-client --clear",
-    "dev:web": "expo start -c --web",
+    "dev": "EXPO_NO_TELEMETRY=1 expo start",
     "dev:android": "expo start -c --android",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "EXPO_USE_FAST_RESOLVER=1  expo start -c --web",
-    "export": "expo export -p web",
+    "build:web": "expo export --platform web",
     "format": "biome check --no-errors-on-unmatched --apply .",
     "db:generate": "bun drizzle-kit generate",
-    "migrate": "bun ./db/migrate.ts",
-    "db:studio": "bun drizzle-kit studio",
     "expo-check": "bun expo install --check"
   },
   "dependencies": {
