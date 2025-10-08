@@ -1,19 +1,19 @@
-import { View, Pressable, Platform } from "react-native";
-import { useScrollToTop } from "@react-navigation/native";
-import { FlashList } from "@shopify/flash-list";
-import { eq } from "drizzle-orm";
-import { Link, Stack } from "expo-router";
+import {View, Pressable, Platform} from "react-native";
+import {useScrollToTop} from "@react-navigation/native";
+import {FlashList} from "@shopify/flash-list";
+import {eq} from "drizzle-orm";
+import {Link, Stack} from "expo-router";
 import * as React from "react";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { Text } from "@/components/ui/text";
-import { habitTable, type Habit } from "@/db/schema";
-import { Plus } from "@/components/Icons";
-import { useMigrationHelper } from "@/db/drizzle";
-import { useDatabase } from "@/db/provider";
-import { HabitCard } from "@/components/habit";
+import {useLiveQuery} from "drizzle-orm/expo-sqlite";
+import {Text} from "@/components/ui/text";
+import {habitTable, type Habit} from "@/db/schema";
+import {Plus} from "@/components/Icons";
+import {useMigrationHelper} from "@/db/drizzle";
+import {useDatabase} from "@/db/provider";
+import {HabitCard} from "@/components/habit";
 
 export default function Home() {
-  const { success, error } = useMigrationHelper();
+  const {success, error} = useMigrationHelper();
 
   if (error) {
     return (
@@ -34,13 +34,13 @@ export default function Home() {
 }
 
 function ScreenContent() {
-  const { db } = useDatabase();
+  const {db} = useDatabase();
 
   const ref = React.useRef(null);
   useScrollToTop(ref);
 
   const renderItem = React.useCallback(
-    ({ item }: { item: Habit }) => <HabitCard {...item} enableNotifications={item.enableNotifications ?? false} archived={item.archived ?? false} />,
+    ({item}: {item: Habit}) => <HabitCard {...item} enableNotifications={item.enableNotifications ?? false} archived={item.archived ?? false} />,
     [],
   );
 
@@ -52,7 +52,7 @@ function ScreenContent() {
     );
   }
 
-  const { data: habits, error } = useLiveQuery(
+  const {data: habits, error} = useLiveQuery(
     db.select().from(habitTable).where(eq(habitTable.archived, false)),
   );
 
@@ -74,7 +74,6 @@ function ScreenContent() {
       <FlashList
         ref={ref}
         className="native:overflow-hidden rounded-t-lg"
-        estimatedItemSize={49}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
           <View>
@@ -99,7 +98,7 @@ function ScreenContent() {
         ItemSeparatorComponent={() => <View className="p-2" />}
         data={habits}
         renderItem={renderItem}
-        keyExtractor={(_, index) => `item-${index}`}
+        keyExtractor={(_, index) => `item-${ index }`}
         ListFooterComponent={<View className="py-4" />}
       />
       <View className="absolute web:bottom-20 bottom-10 right-8">

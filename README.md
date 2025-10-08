@@ -29,7 +29,7 @@ For local-first example with remote sync please check our [article](https://www.
 
 ### Requirements
 
-- Node.js 20+ and pnpm or bun
+- Node.js 20+ and bun
 - [iOS Simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Android Studio Emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - For Windows users: [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) is required
