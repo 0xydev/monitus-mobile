@@ -1,7 +1,7 @@
 {
   "name": "@expo-starter/template",
   "main": "expo-router/entry",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "homepage": "https://expostarter.com",
   "repository": "git@github.com:expo-starter/expo-template.git",
   "license": "Apache-2.0",
