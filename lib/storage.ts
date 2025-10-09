@@ -1,19 +1,22 @@
-import Storage from 'expo-sqlite/kv-store';
+import { MMKV } from "react-native-mmkv";
 
-export async function getItem<T>(key: string): Promise<T | null> {
-  const value = await Storage.getItem(key);
+export const storage = new MMKV();
+
+export function getItem<T>(key: string): T | null {
+  const value = storage.getString(key);
   try {
     return value ? JSON.parse(value) || null : null;
   } catch (error) {
+    // Handle the error here
     console.error("Error parsing JSON:", error);
     return null;
   }
 }
 
 export function setItem<T>(key: string, value: T) {
-  Storage.setItem(key, JSON.stringify(value));
+  storage.set(key, JSON.stringify(value));
 }
 
 export function removeItem(key: string) {
-  Storage.removeItem(key);
+  storage.delete(key);
 }

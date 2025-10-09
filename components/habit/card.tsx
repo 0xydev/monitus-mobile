@@ -2,7 +2,7 @@ import type React from "react";
 import {View, Pressable} from "react-native";
 import {Button} from "@/components/ui/button";
 import {Text} from "@/components/ui/text";
-import type {Habit} from "@/lib/storage";
+import type {Habit} from "@/db/schema";
 import {
   Card,
   CardContent,

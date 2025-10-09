@@ -20,10 +20,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   assetBundlePatterns: ["**/*"],
   ios: {
+    newArchEnabled: true,
     supportsTablet: true,
     bundleIdentifier: "com.expostarter.base",
   },
   android: {
+    newArchEnabled: true,
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff",
