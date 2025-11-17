@@ -1,11 +1,11 @@
 // API Configuration
-export const API_BASE_URL = __DEV__
-  ? 'http://localhost:9999'
-  : 'https://api.monitus.io';
+// Production URL - deployed backend
+export const API_BASE_URL = 'https://api.monitus.io';
+export const WS_URL = 'wss://api.monitus.io/ws';
 
-export const WS_URL = __DEV__
-  ? 'ws://localhost:9999/ws'
-  : 'wss://api.monitus.io/ws';
+// For local development, uncomment these:
+// export const API_BASE_URL = 'http://localhost:9999';
+// export const WS_URL = 'ws://localhost:9999/ws';
 
 export const endpoints = {
   // Auth
