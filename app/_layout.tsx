@@ -131,6 +131,7 @@ export default function RootLayout() {
                 <Stack.Screen name="room/[id]" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="profile/edit" />
+                <Stack.Screen name="profile/change-password" />
                 <Stack.Screen name="onboarding" />
               </Stack>
             </AuthGuard>

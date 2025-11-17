@@ -17,15 +17,19 @@ import {
   Settings,
   Edit3,
   ChevronRight,
+  KeyRound,
+  Trash2,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { setAndroidNavigationBar } from '@/lib/android-navigation-bar';
 import { setItem } from '@/lib/storage';
 import { AchievementCard } from '@/components/gamification/AchievementCard';
+import { authService } from '@/services/api/auth';
 import type { AchievementDefinition, UserAchievement } from '@/types/api';
 
 export default function ProfileScreen() {
   const { user, logout, isLoading } = useAuthStore();
+  const [isDeleting, setIsDeleting] = useState(false);
   const { stats, fetchStats } = useTimerStore();
   const { colorScheme, setColorScheme } = useColorScheme();
 
@@ -76,6 +80,54 @@ export default function ProfileScreen() {
     setColorScheme(newTheme);
     setAndroidNavigationBar(newTheme);
     setItem('theme', newTheme);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This action is irreversible. Your account will be scheduled for deletion and you will have 30 days to restore it. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            // Second confirmation
+            Alert.alert(
+              'Final Confirmation',
+              'Type "DELETE" to confirm account deletion. This cannot be undone.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Confirm Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    setIsDeleting(true);
+                    try {
+                      await authService.deleteAccount();
+                      Alert.alert(
+                        'Account Scheduled for Deletion',
+                        'Your account has been scheduled for deletion. You have 30 days to restore it by logging in again.',
+                        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+                      );
+                    } catch (error) {
+                      Alert.alert(
+                        'Error',
+                        error instanceof Error
+                          ? error.message
+                          : 'Failed to delete account'
+                      );
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const formatDate = (dateString?: string | null) => {
@@ -231,6 +283,17 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Pressable
+            onPress={() => router.push('/profile/change-password')}
+            className="flex-row items-center justify-between p-4 border-b border-border"
+          >
+            <View className="flex-row items-center">
+              <KeyRound size={20} className="text-foreground" />
+              <Text className="ml-3 text-foreground">Change Password</Text>
+            </View>
+            <ChevronRight size={20} className="text-muted-foreground" />
+          </Pressable>
+
+          <Pressable
             onPress={toggleTheme}
             className="flex-row items-center justify-between p-4 border-b border-border"
           >
@@ -257,6 +320,36 @@ export default function ProfileScreen() {
               {isLoading ? 'Logging out...' : 'Logout'}
             </Text>
           </Pressable>
+        </View>
+
+        {/* Danger Zone */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-destructive mb-3">
+            Danger Zone
+          </Text>
+          <View className="bg-destructive/5 rounded-xl border border-destructive/20 p-4">
+            <View className="flex-row items-start mb-3">
+              <Trash2 size={20} color="#EF4444" />
+              <View className="ml-3 flex-1">
+                <Text className="font-medium text-foreground">
+                  Delete Account
+                </Text>
+                <Text className="text-sm text-muted-foreground mt-1">
+                  Permanently delete your account and all associated data. You
+                  have 30 days to restore your account after deletion.
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive py-3 rounded-lg active:opacity-80 disabled:opacity-50"
+            >
+              <Text className="text-center font-medium text-white">
+                {isDeleting ? 'Deleting...' : 'Delete My Account'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View className="h-8" />

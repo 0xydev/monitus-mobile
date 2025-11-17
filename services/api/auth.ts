@@ -51,10 +51,13 @@ export const authService = {
     return response.data;
   },
 
-  async changePassword(data: ChangePasswordRequest): Promise<void> {
+  async changePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
     await apiClient.request(endpoints.changePassword, {
       method: 'PUT',
-      body: data,
+      body: { old_password: oldPassword, new_password: newPassword },
     });
   },
 
