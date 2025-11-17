@@ -1,6 +1,7 @@
 import { View, Text, Alert, ScrollView, TextInput, Pressable } from 'react-native';
 import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useKeepAwake } from 'expo-keep-awake';
 import { TimerCircle } from '@/components/timer/TimerCircle';
 import { TimerControls } from '@/components/timer/TimerControls';
 import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
@@ -11,6 +12,7 @@ import { XPProgressBar } from '@/components/gamification/XPProgressBar';
 import { LevelBadge } from '@/components/gamification/LevelBadge';
 import { useTimerStore } from '@/stores/timerStore';
 import { useTagStore } from '@/stores/tagStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export default function TimerScreen() {
   const {
@@ -25,6 +27,11 @@ export default function TimerScreen() {
   } = useTimerStore();
 
   const { createTag } = useTagStore();
+  const { defaultFocusDuration, defaultBreakDuration, keepScreenAwake } =
+    useSettingsStore();
+
+  // Keep screen awake when timer is running (if enabled in settings)
+  useKeepAwake(isRunning && keepScreenAwake ? 'timer-active' : undefined);
 
   const [selectedDuration, setSelectedDuration] = useState(25);
   const [showCreateTag, setShowCreateTag] = useState(false);
@@ -55,10 +62,12 @@ export default function TimerScreen() {
     fetchStats();
   }, [fetchStats]);
 
-  // Update duration when session type changes
+  // Update duration when session type changes (use settings defaults)
   useEffect(() => {
-    setSelectedDuration(sessionType === 'focus' ? 25 : 5);
-  }, [sessionType]);
+    setSelectedDuration(
+      sessionType === 'focus' ? defaultFocusDuration : defaultBreakDuration
+    );
+  }, [sessionType, defaultFocusDuration, defaultBreakDuration]);
 
   const handleStart = async () => {
     try {

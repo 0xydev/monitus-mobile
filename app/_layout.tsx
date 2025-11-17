@@ -20,6 +20,8 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { View, ActivityIndicator } from 'react-native';
 import { NetworkStatusBar } from '@/components/common/NetworkStatusBar';
+import { ErrorBoundary as AppErrorBoundary } from '@/components/common/ErrorBoundary';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -36,26 +38,41 @@ SplashScreen.preventAutoHideAsync();
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isInitialized, initialize } = useAuthStore();
   const segments = useSegments();
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = React.useState<
+    boolean | null
+  >(null);
 
   useEffect(() => {
     initialize();
+    // Check if onboarding has been completed
+    AsyncStorage.getItem('onboarding_completed').then((value) => {
+      setHasCompletedOnboarding(value === 'true');
+    });
   }, [initialize]);
 
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || hasCompletedOnboarding === null) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inOnboarding = segments[0] === 'onboarding';
 
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect to login if not authenticated and not in auth group
       router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to main app if authenticated and in auth group
-      router.replace('/(tabs)');
+      // Check if user needs onboarding
+      if (!hasCompletedOnboarding) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } else if (isAuthenticated && !hasCompletedOnboarding && !inOnboarding) {
+      // Redirect to onboarding if not completed
+      router.replace('/onboarding');
     }
-  }, [isAuthenticated, isInitialized, segments]);
+  }, [isAuthenticated, isInitialized, segments, hasCompletedOnboarding]);
 
-  if (!isInitialized) {
+  if (!isInitialized || hasCompletedOnboarding === null) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" />
@@ -101,23 +118,26 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DARK_THEME : LIGHT_THEME}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <NetworkStatusBar />
-        <BottomSheetModalProvider>
-          <AuthGuard>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="room/[id]" />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="profile/edit" />
-            </Stack>
-          </AuthGuard>
-        </BottomSheetModalProvider>
-      </GestureHandlerRootView>
-      <PortalHost />
-    </ThemeProvider>
+    <AppErrorBoundary>
+      <ThemeProvider value={colorScheme === 'dark' ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <NetworkStatusBar />
+          <BottomSheetModalProvider>
+            <AuthGuard>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="room/[id]" />
+                <Stack.Screen name="settings" />
+                <Stack.Screen name="profile/edit" />
+                <Stack.Screen name="onboarding" />
+              </Stack>
+            </AuthGuard>
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+        <PortalHost />
+      </ThemeProvider>
+    </AppErrorBoundary>
   );
 }
