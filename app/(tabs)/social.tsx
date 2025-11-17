@@ -64,8 +64,9 @@ export default function SocialScreen() {
         setFriends(friendsData);
         setPendingRequests(pendingData);
       }
-    } catch {
-      // Handle error
+    } catch (error) {
+      console.error('Failed to load social data:', error);
+      // Data will remain in current state
     } finally {
       setIsLoading(false);
     }

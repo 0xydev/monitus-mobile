@@ -22,6 +22,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { NetworkStatusBar } from '@/components/common/NetworkStatusBar';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/common/ErrorBoundary';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -92,6 +93,9 @@ export default function RootLayout() {
   });
 
   useFrameworkReady();
+
+  // Initialize push notifications
+  useNotifications();
 
   useEffect(() => {
     const theme = getItem('theme');

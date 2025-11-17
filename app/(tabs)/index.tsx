@@ -1,5 +1,5 @@
 import { View, Text, Alert, ScrollView, TextInput, Pressable } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
 import { TimerCircle } from '@/components/timer/TimerCircle';
@@ -13,14 +13,19 @@ import { LevelBadge } from '@/components/gamification/LevelBadge';
 import { useTimerStore } from '@/stores/timerStore';
 import { useTagStore } from '@/stores/tagStore';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { useAppState } from '@/hooks/useAppState';
+import { useHaptics } from '@/hooks/useHaptics';
 
 export default function TimerScreen() {
   const {
     isRunning,
+    isPaused,
     sessionType,
     stats,
     selectedTagId,
     startTimer,
+    pauseTimer,
+    resumeTimer,
     tick,
     fetchStats,
     setTagId,
@@ -29,9 +34,19 @@ export default function TimerScreen() {
   const { createTag } = useTagStore();
   const { defaultFocusDuration, defaultBreakDuration, keepScreenAwake } =
     useSettingsStore();
+  const haptics = useHaptics();
 
   // Keep screen awake when timer is running (if enabled in settings)
   useKeepAwake(isRunning && keepScreenAwake ? 'timer-active' : undefined);
+
+  // Handle app going to background - pause timer
+  const handleBackground = useCallback(() => {
+    if (isRunning && !isPaused) {
+      pauseTimer();
+    }
+  }, [isRunning, isPaused, pauseTimer]);
+
+  useAppState(undefined, handleBackground);
 
   const [selectedDuration, setSelectedDuration] = useState(25);
   const [showCreateTag, setShowCreateTag] = useState(false);
@@ -71,8 +86,11 @@ export default function TimerScreen() {
 
   const handleStart = async () => {
     try {
+      haptics.medium();
       await startTimer(selectedDuration, selectedTagId || undefined);
+      haptics.success();
     } catch (error) {
+      haptics.error();
       const message =
         error instanceof Error ? error.message : 'Failed to start session';
       Alert.alert('Error', message);

@@ -20,6 +20,9 @@ interface RoomStoreState {
   isCreating: boolean;
   error: string | null;
 
+  // WebSocket cleanup function
+  wsCleanup: (() => void) | null;
+
   // Actions
   createRoom: (
     name: string,
@@ -51,6 +54,7 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
   isJoining: false,
   isCreating: false,
   error: null,
+  wsCleanup: null,
 
   createRoom: async (name, timerDuration, breakDuration) => {
     set({ isCreating: true, error: null });
@@ -89,10 +93,8 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
         participants,
         isInRoom: true,
         isJoining: false,
+        wsCleanup: removeHandler,
       });
-
-      // Store cleanup function
-      (get() as unknown as { wsCleanup: () => void }).wsCleanup = removeHandler;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to join room';
@@ -102,20 +104,26 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
   },
 
   leaveRoom: async () => {
-    const { currentRoom } = get();
+    const { currentRoom, wsCleanup } = get();
     if (!currentRoom) return;
 
     try {
       await roomService.leave(currentRoom.id);
-    } catch {
-      // Ignore leave errors
+    } catch (error) {
+      console.error('Failed to leave room:', error);
     }
 
+    // Clean up WebSocket
+    if (wsCleanup) {
+      wsCleanup();
+    }
     wsService.disconnect();
+
     set({
       currentRoom: null,
       participants: [],
       isInRoom: false,
+      wsCleanup: null,
     });
   },
 
@@ -140,6 +148,7 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
       const rooms = await roomService.getMy();
       set({ myRooms: rooms, isLoading: false });
     } catch (error) {
+      console.error('Failed to fetch my rooms:', error);
       set({ isLoading: false });
     }
   },
@@ -150,6 +159,7 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
       const rooms = await roomService.getActive();
       set({ activeRooms: rooms, isLoading: false });
     } catch (error) {
+      console.error('Failed to fetch active rooms:', error);
       set({ isLoading: false });
     }
   },
@@ -161,8 +171,8 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
     try {
       const participants = await roomService.getParticipants(currentRoom.id);
       set({ participants });
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.error('Failed to fetch participants:', error);
     }
   },
 
@@ -197,11 +207,16 @@ export const useRoomStore = create<RoomStoreState>((set, get) => ({
   clearError: () => set({ error: null }),
 
   cleanup: () => {
+    const { wsCleanup } = get();
+    if (wsCleanup) {
+      wsCleanup();
+    }
     wsService.disconnect();
     set({
       currentRoom: null,
       participants: [],
       isInRoom: false,
+      wsCleanup: null,
     });
   },
 

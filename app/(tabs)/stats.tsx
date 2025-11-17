@@ -23,8 +23,9 @@ export default function StatsScreen() {
     try {
       const result = await sessionService.getAll(1, 10);
       setSessions(result.sessions);
-    } catch {
-      // Handle error
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+      // Sessions will remain empty, showing "No sessions yet" message
     }
   };
 
