@@ -1,0 +1,170 @@
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/stores/authStore';
+import { useTimerStore } from '@/stores/timerStore';
+import { router } from 'expo-router';
+import {
+  User,
+  Mail,
+  Calendar,
+  LogOut,
+  Moon,
+  Sun,
+  Trophy,
+  Flame,
+  Target,
+} from 'lucide-react-native';
+import { useColorScheme } from '@/lib/useColorScheme';
+import { setAndroidNavigationBar } from '@/lib/android-navigation-bar';
+import { setItem } from '@/lib/storage';
+
+export default function ProfileScreen() {
+  const { user, logout, isLoading } = useAuthStore();
+  const { stats } = useTimerStore();
+  const { colorScheme, setColorScheme } = useColorScheme();
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          router.replace('/(auth)/login');
+        },
+      },
+    ]);
+  };
+
+  const toggleTheme = () => {
+    const newTheme = colorScheme === 'dark' ? 'light' : 'dark';
+    setColorScheme(newTheme);
+    setAndroidNavigationBar(newTheme);
+    setItem('theme', newTheme);
+  };
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView className="flex-1 px-6">
+        <Text className="text-2xl font-bold text-foreground mt-4 mb-6">
+          Profile
+        </Text>
+
+        {/* User Info Card */}
+        <View className="bg-card p-6 rounded-xl border border-border mb-6">
+          <View className="items-center mb-4">
+            <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center mb-3">
+              <Text className="text-3xl font-bold text-primary">
+                {user?.username?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <Text className="text-xl font-semibold text-foreground">
+              {user?.username || 'User'}
+            </Text>
+            <Text className="text-sm text-muted-foreground">
+              Level {stats.level}
+            </Text>
+          </View>
+
+          <View className="gap-3">
+            <View className="flex-row items-center">
+              <Mail size={18} className="text-muted-foreground" />
+              <Text className="ml-3 text-foreground">{user?.email}</Text>
+            </View>
+            <View className="flex-row items-center">
+              <Calendar size={18} className="text-muted-foreground" />
+              <Text className="ml-3 text-foreground">
+                Joined {formatDate(user?.created_at)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Stats Summary */}
+        <View className="bg-card p-6 rounded-xl border border-border mb-6">
+          <Text className="text-lg font-semibold text-foreground mb-4">
+            Your Achievements
+          </Text>
+          <View className="gap-4">
+            <View className="flex-row items-center">
+              <Trophy size={24} className="text-yellow-500" />
+              <View className="ml-3">
+                <Text className="font-medium text-foreground">
+                  {stats.xp} XP
+                </Text>
+                <Text className="text-sm text-muted-foreground">
+                  Total Experience
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row items-center">
+              <Flame size={24} color="#F59E0B" />
+              <View className="ml-3">
+                <Text className="font-medium text-foreground">
+                  {stats.longest_streak} days
+                </Text>
+                <Text className="text-sm text-muted-foreground">
+                  Longest Streak
+                </Text>
+              </View>
+            </View>
+            <View className="flex-row items-center">
+              <Target size={24} className="text-primary" />
+              <View className="ml-3">
+                <Text className="font-medium text-foreground">
+                  {Math.round(stats.total_focus_hours)} hours
+                </Text>
+                <Text className="text-sm text-muted-foreground">
+                  Total Focus Time
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Settings */}
+        <View className="bg-card rounded-xl border border-border mb-6">
+          <Pressable
+            onPress={toggleTheme}
+            className="flex-row items-center justify-between p-4 border-b border-border"
+          >
+            <View className="flex-row items-center">
+              {colorScheme === 'dark' ? (
+                <Moon size={20} className="text-foreground" />
+              ) : (
+                <Sun size={20} className="text-foreground" />
+              )}
+              <Text className="ml-3 text-foreground">Theme</Text>
+            </View>
+            <Text className="text-muted-foreground capitalize">
+              {colorScheme}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleLogout}
+            disabled={isLoading}
+            className="flex-row items-center p-4"
+          >
+            <LogOut size={20} className="text-destructive" />
+            <Text className="ml-3 text-destructive">
+              {isLoading ? 'Logging out...' : 'Logout'}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View className="h-8" />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}

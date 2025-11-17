@@ -1,115 +1,134 @@
-import {View, Pressable, Platform} from "react-native";
-import {useScrollToTop} from "@react-navigation/native";
-import {FlashList} from "@shopify/flash-list";
-import {eq} from "drizzle-orm";
-import {Link, Stack} from "expo-router";
-import * as React from "react";
-import {useLiveQuery} from "drizzle-orm/expo-sqlite";
-import {Text} from "@/components/ui/text";
-import {habitTable, type Habit} from "@/db/schema";
-import {Plus} from "@/components/Icons";
-import {useMigrationHelper} from "@/db/drizzle";
-import {useDatabase} from "@/db/provider";
-import {HabitCard} from "@/components/habit";
+import { View, Text, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { TimerCircle } from '@/components/timer/TimerCircle';
+import { TimerControls } from '@/components/timer/TimerControls';
+import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
+import { DurationPicker } from '@/components/timer/DurationPicker';
+import { StreakIndicator } from '@/components/gamification/StreakIndicator';
+import { XPProgressBar } from '@/components/gamification/XPProgressBar';
+import { LevelBadge } from '@/components/gamification/LevelBadge';
+import { useTimerStore } from '@/stores/timerStore';
 
-export default function Home() {
-  const {success, error} = useMigrationHelper();
+export default function TimerScreen() {
+  const {
+    isRunning,
+    sessionType,
+    stats,
+    startTimer,
+    tick,
+    fetchStats,
+  } = useTimerStore();
 
-  if (error) {
-    return (
-      <View className="flex-1 gap-5 p-6 bg-secondary/30">
-        <Text>Migration error: {error.message}</Text>
-      </View>
-    );
-  }
-  if (!success) {
-    return (
-      <View className="flex-1 gap-5 p-6 bg-secondary/30">
-        <Text>Migration is in progress...</Text>
-      </View>
-    );
-  }
+  const [selectedDuration, setSelectedDuration] = useState(25);
 
-  return <ScreenContent />;
-}
+  // Timer tick
+  useEffect(() => {
+    const interval = setInterval(() => {
+      tick();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tick]);
 
-function ScreenContent() {
-  const {db} = useDatabase();
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
-  const ref = React.useRef(null);
-  useScrollToTop(ref);
+  // Update duration when session type changes
+  useEffect(() => {
+    setSelectedDuration(sessionType === 'focus' ? 25 : 5);
+  }, [sessionType]);
 
-  const renderItem = React.useCallback(
-    ({item}: {item: Habit}) => <HabitCard {...item} enableNotifications={item.enableNotifications ?? false} archived={item.archived ?? false} />,
-    [],
-  );
+  const handleStart = async () => {
+    try {
+      await startTimer(selectedDuration);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to start session';
+      Alert.alert('Error', message);
+    }
+  };
 
-  if (!db) {
-    return (
-      <View className="flex-1 items-center justify-center bg-secondary/30">
-        <Text>Loading database...</Text>
-      </View>
-    );
-  }
-
-  const {data: habits, error} = useLiveQuery(
-    db.select().from(habitTable).where(eq(habitTable.archived, false)),
-  );
-
-  if (error) {
-    return (
-      <View className="flex-1 items-center justify-center bg-secondary/30">
-        <Text className="text-destructive pb-2 ">Error Loading data</Text>
-      </View>
-    )
-  }
+  const handleDurationChange = (minutes: number) => {
+    setSelectedDuration(minutes);
+    // Update the timer store duration if not running
+    if (!isRunning) {
+      useTimerStore.setState({
+        timeRemaining: minutes * 60,
+        totalDuration: minutes * 60,
+      });
+    }
+  };
 
   return (
-    <View className="flex flex-col basis-full bg-background  p-8">
-      <Stack.Screen
-        options={{
-          title: "Habits",
-        }}
-      />
-      <FlashList
-        ref={ref}
-        className="native:overflow-hidden rounded-t-lg"
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => (
-          <View>
-            <Text className="text-lg"  >Hi There 👋</Text>
-            <Text className="text-sm">
-              This example use sql.js on Web and expo/sqlite on native
-            </Text>
-            {Platform.OS !== "web" && <Text className="text-sm">
-              If you change the schema, you need to run{" "}
-              <Text className="text-sm font-mono text-muted-foreground bg-muted">
-                bun db:generate
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 px-6">
+        {/* Header */}
+        <View className="flex-row justify-between items-center mb-6 mt-4">
+          <StreakIndicator
+            currentStreak={stats.current_streak}
+            longestStreak={stats.longest_streak}
+          />
+          <LevelBadge level={stats.level} />
+        </View>
+
+        {/* XP Progress */}
+        <XPProgressBar currentXP={stats.xp} level={stats.level} />
+
+        {/* Session Type Toggle */}
+        <View className="mb-6">
+          <SessionTypeToggle />
+        </View>
+
+        {/* Duration Picker */}
+        <View className="mb-8">
+          <DurationPicker
+            value={selectedDuration}
+            onChange={handleDurationChange}
+            disabled={isRunning}
+          />
+        </View>
+
+        {/* Timer */}
+        <View className="items-center mb-8">
+          <TimerCircle />
+        </View>
+
+        {/* Controls */}
+        <TimerControls onStart={handleStart} />
+
+        {/* Stats Summary */}
+        <View className="mt-8 bg-card p-4 rounded-xl border border-border">
+          <Text className="text-lg font-semibold text-foreground mb-3">
+            Your Stats
+          </Text>
+          <View className="flex-row justify-between">
+            <View>
+              <Text className="text-2xl font-bold text-foreground">
+                {Math.round(stats.total_focus_hours)}h
               </Text>
-              <Text className="text-sm px-1">
-                then
+              <Text className="text-sm text-muted-foreground">
+                Total Focus
               </Text>
-              <Text className="text-sm font-mono text-muted-foreground bg-muted">
-                bun migrate
-              </Text>
-            </Text>}
-          </View>
-        )}
-        ItemSeparatorComponent={() => <View className="p-2" />}
-        data={habits}
-        renderItem={renderItem}
-        keyExtractor={(_, index) => `item-${ index }`}
-        ListFooterComponent={<View className="py-4" />}
-      />
-      <View className="absolute web:bottom-20 bottom-10 right-8">
-        <Link href="/create" asChild>
-          <Pressable>
-            <View className="bg-primary justify-center rounded-full h-[45px] w-[45px]">
-              <Plus className="text-background self-center" />
             </View>
-          </Pressable>
-        </Link>
+            <View>
+              <Text className="text-2xl font-bold text-foreground">
+                {stats.weekly_sessions}
+              </Text>
+              <Text className="text-sm text-muted-foreground">
+                This Week
+              </Text>
+            </View>
+            <View>
+              <Text className="text-2xl font-bold text-foreground">
+                {stats.xp}
+              </Text>
+              <Text className="text-sm text-muted-foreground">Total XP</Text>
+            </View>
+          </View>
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }

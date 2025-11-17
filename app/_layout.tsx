@@ -1,37 +1,74 @@
-import "./global.css";
-import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { type Theme, ThemeProvider } from "@react-navigation/native";
-import { SplashScreen, Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import * as React from "react";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { PortalHost } from "@/components/primitives/portal";
-import { DatabaseProvider } from "@/db/provider";
-import { setAndroidNavigationBar } from "@/lib/android-navigation-bar";
-import { DARK_THEME, LIGHT_THEME } from "@/lib/constants";
-import { useColorScheme } from "@/lib/useColorScheme";
-import { getItem, setItem } from "@/lib/storage";
-import { useFrameworkReady } from "@/hooks/useFrameworkReady";
-import { Inter_400Regular, Inter_600SemiBold, useFonts } from '@expo-google-fonts/inter';
-import { useEffect } from "react";
-
+import './global.css';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { type Theme, ThemeProvider } from '@react-navigation/native';
+import { SplashScreen, Stack, router, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import * as React from 'react';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PortalHost } from '@/components/primitives/portal';
+import { setAndroidNavigationBar } from '@/lib/android-navigation-bar';
+import { DARK_THEME, LIGHT_THEME } from '@/lib/constants';
+import { useColorScheme } from '@/lib/useColorScheme';
+import { getItem, setItem } from '@/lib/storage';
+import { useFrameworkReady } from '@/hooks/useFrameworkReady';
+import {
+  Inter_400Regular,
+  Inter_600SemiBold,
+  useFonts,
+} from '@expo-google-fonts/inter';
+import { useAuthStore } from '@/stores/authStore';
+import { View, ActivityIndicator } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from "expo-router";
+} from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: "(tabs)",
+  initialRouteName: '(auth)',
 };
 
 // Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isInitialized, initialize } = useAuthStore();
+  const segments = useSegments();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to login if not authenticated and not in auth group
+      router.replace('/(auth)/login');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect to main app if authenticated and in auth group
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isInitialized, segments]);
+
+  if (!isInitialized) {
+    return (
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
 
-  const [loaded, error] = useFonts({
+  const [loaded] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
   });
@@ -39,13 +76,13 @@ export default function RootLayout() {
   useFrameworkReady();
 
   useEffect(() => {
-    const theme = getItem("theme");
+    const theme = getItem('theme');
     if (!theme) {
       setAndroidNavigationBar(colorScheme);
-      setItem("theme", colorScheme);
+      setItem('theme', colorScheme);
       return;
     }
-    const colorTheme = theme === "dark" ? "dark" : "light";
+    const colorTheme = theme === 'dark' ? 'dark' : 'light';
     setAndroidNavigationBar(colorTheme);
     if (colorTheme !== colorScheme) {
       setColorScheme(colorTheme);
@@ -58,26 +95,24 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  if (!loaded) {
+    return null;
+  }
 
   return (
-    <DatabaseProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DARK_THEME : LIGHT_THEME}>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <BottomSheetModalProvider>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ title: "Habits", headerShown: false }} />
-              <Stack.Screen options={{
-                headerShadowVisible: false,
-              }} name="habits/archive" />
-              <Stack.Screen options={{
-                headerShadowVisible: false,
-              }} name="habits/[id]" />
+    <ThemeProvider value={colorScheme === 'dark' ? DARK_THEME : LIGHT_THEME}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <AuthGuard>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(tabs)" />
             </Stack>
-          </BottomSheetModalProvider>
-        </GestureHandlerRootView>
-      </ThemeProvider>
+          </AuthGuard>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
       <PortalHost />
-    </DatabaseProvider>
+    </ThemeProvider>
   );
 }
