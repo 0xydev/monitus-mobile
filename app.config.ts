@@ -1,51 +1,63 @@
-import type { ConfigContext, ExpoConfig } from "@expo/config";
+import type { ConfigContext, ExpoConfig } from '@expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: "Expo Starter",
-  slug: "expostarter",
+  name: 'Monitus',
+  slug: 'monitus-mobile',
   newArchEnabled: true,
-  version: "1.0.0",
-  orientation: "portrait",
-  icon: "./assets/images/icon.png",
-  scheme: "ltstarter",
-  userInterfaceStyle: "dark",
+  version: '2.0.0',
+  orientation: 'portrait',
+  icon: './assets/images/icon.png',
+  scheme: 'monitus',
+  userInterfaceStyle: 'automatic',
   runtimeVersion: {
-    policy: "appVersion",
+    policy: 'appVersion',
   },
   splash: {
-    image: "./assets/images/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#ffffff",
+    image: './assets/images/splash.png',
+    resizeMode: 'contain',
+    backgroundColor: '#6366F1',
   },
-  assetBundlePatterns: ["**/*"],
+  assetBundlePatterns: ['**/*'],
   ios: {
     newArchEnabled: true,
     supportsTablet: true,
-    bundleIdentifier: "com.expostarter.base",
+    bundleIdentifier: 'io.monitus.app',
   },
   android: {
     newArchEnabled: true,
     adaptiveIcon: {
-      foregroundImage: "./assets/images/adaptive-icon.png",
-      backgroundColor: "#ffffff",
+      foregroundImage: './assets/images/adaptive-icon.png',
+      backgroundColor: '#6366F1',
     },
-    package: "com.expostarter.base",
+    package: 'io.monitus.app',
   },
   web: {
-    bundler: "metro",
-    output: "static",
-    favicon: "./assets/images/favicon.png",
+    bundler: 'metro',
+    output: 'static',
+    favicon: './assets/images/favicon.png',
   },
-  plugins: ["expo-router", "expo-sqlite", "expo-font", "expo-web-browser"],
+  plugins: [
+    'expo-router',
+    'expo-sqlite',
+    'expo-font',
+    'expo-web-browser',
+    'expo-secure-store',
+    [
+      'expo-notifications',
+      {
+        icon: './assets/images/notification-icon.png',
+        color: '#6366F1',
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
-    baseUrl: "/expo-local-first-template",
   },
   extra: {
     eas: {
-      projectId: "",
+      projectId: 'your-project-id',
     },
   },
-  owner: "*",
+  owner: 'monitus',
 });

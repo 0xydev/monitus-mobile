@@ -155,7 +155,7 @@ export default function RoomsScreen() {
                   key={room.id}
                   room={room}
                   onPress={() => {
-                    // Navigate to room detail
+                    router.push(`/room/${room.id}`);
                   }}
                 />
               ))}
@@ -181,7 +181,7 @@ export default function RoomsScreen() {
                   key={room.id}
                   room={room}
                   onPress={() => {
-                    // Navigate to room detail
+                    router.push(`/room/${room.id}`);
                   }}
                 />
               ))}

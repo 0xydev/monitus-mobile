@@ -19,6 +19,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { useAuthStore } from '@/stores/authStore';
 import { View, ActivityIndicator } from 'react-native';
+import { NetworkStatusBar } from '@/components/common/NetworkStatusBar';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -103,11 +104,13 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DARK_THEME : LIGHT_THEME}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <NetworkStatusBar />
         <BottomSheetModalProvider>
           <AuthGuard>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="room/[id]" />
             </Stack>
           </AuthGuard>
         </BottomSheetModalProvider>
