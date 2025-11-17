@@ -2,19 +2,22 @@ import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTimerStore } from '@/stores/timerStore';
+import { useTagStore } from '@/stores/tagStore';
 import { sessionService } from '@/services/api/sessions';
 import type { Session } from '@/types/api';
-import { Clock, Calendar, Target, TrendingUp } from 'lucide-react-native';
+import { Clock, Calendar, Target, TrendingUp, Tag } from 'lucide-react-native';
 
 export default function StatsScreen() {
   const { stats, fetchStats, isLoadingStats } = useTimerStore();
+  const { tags, fetchTags } = useTagStore();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     fetchStats();
     loadSessions();
-  }, [fetchStats]);
+    fetchTags();
+  }, [fetchStats, fetchTags]);
 
   const loadSessions = async () => {
     try {
@@ -27,8 +30,14 @@ export default function StatsScreen() {
 
   const onRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([fetchStats(), loadSessions()]);
+    await Promise.all([fetchStats(), loadSessions(), fetchTags()]);
     setIsRefreshing(false);
+  };
+
+  const getTagName = (tagId?: string | null) => {
+    if (!tagId) return null;
+    const tag = tags.find((t) => t.id === tagId);
+    return tag?.name || null;
   };
 
   const formatDuration = (minutes: number) => {
@@ -116,44 +125,55 @@ export default function StatsScreen() {
           </View>
         ) : (
           <View className="gap-3">
-            {sessions.map((session) => (
-              <View
-                key={session.id}
-                className="bg-card p-4 rounded-xl border border-border"
-              >
-                <View className="flex-row justify-between items-center mb-2">
-                  <View className="flex-row items-center">
-                    <View
-                      className={`w-3 h-3 rounded-full mr-2 ${
-                        session.session_type === 'focus'
-                          ? 'bg-red-500'
-                          : 'bg-cyan-500'
+            {sessions.map((session) => {
+              const tagName = getTagName(session.tag_id);
+              return (
+                <View
+                  key={session.id}
+                  className="bg-card p-4 rounded-xl border border-border"
+                >
+                  <View className="flex-row justify-between items-center mb-2">
+                    <View className="flex-row items-center">
+                      <View
+                        className={`w-3 h-3 rounded-full mr-2 ${
+                          session.session_type === 'focus'
+                            ? 'bg-red-500'
+                            : 'bg-cyan-500'
+                        }`}
+                      />
+                      <Text className="font-medium text-foreground capitalize">
+                        {session.session_type}
+                      </Text>
+                    </View>
+                    <Text
+                      className={`text-sm font-medium ${
+                        session.completed
+                          ? 'text-green-500'
+                          : 'text-muted-foreground'
                       }`}
-                    />
-                    <Text className="font-medium text-foreground capitalize">
-                      {session.session_type}
+                    >
+                      {session.completed ? 'Completed' : 'Cancelled'}
                     </Text>
                   </View>
-                  <Text
-                    className={`text-sm font-medium ${
-                      session.completed
-                        ? 'text-green-500'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {session.completed ? 'Completed' : 'Cancelled'}
-                  </Text>
+                  {tagName && (
+                    <View className="flex-row items-center mb-2">
+                      <Tag size={12} className="text-primary" />
+                      <Text className="text-xs text-primary ml-1">
+                        {tagName}
+                      </Text>
+                    </View>
+                  )}
+                  <View className="flex-row justify-between">
+                    <Text className="text-sm text-muted-foreground">
+                      {formatDate(session.start_time)}
+                    </Text>
+                    <Text className="text-sm text-foreground font-medium">
+                      {session.actual_duration}m / {session.planned_duration}m
+                    </Text>
+                  </View>
                 </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-sm text-muted-foreground">
-                    {formatDate(session.start_time)}
-                  </Text>
-                  <Text className="text-sm text-foreground font-medium">
-                    {session.actual_duration}m / {session.planned_duration}m
-                  </Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         )}
 

@@ -111,6 +111,8 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="room/[id]" />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="profile/edit" />
             </Stack>
           </AuthGuard>
         </BottomSheetModalProvider>

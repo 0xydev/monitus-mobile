@@ -14,6 +14,9 @@ import {
   Trophy,
   Flame,
   Target,
+  Settings,
+  Edit3,
+  ChevronRight,
 } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { setAndroidNavigationBar } from '@/lib/android-navigation-bar';
@@ -105,11 +108,19 @@ export default function ProfileScreen() {
         {/* User Info Card */}
         <View className="bg-card p-6 rounded-xl border border-border mb-6">
           <View className="items-center mb-4">
-            <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center mb-3">
-              <Text className="text-3xl font-bold text-primary">
-                {user?.username?.charAt(0).toUpperCase() || 'U'}
-              </Text>
-            </View>
+            <Pressable
+              onPress={() => router.push('/profile/edit')}
+              className="relative"
+            >
+              <View className="w-20 h-20 rounded-full bg-primary/10 items-center justify-center mb-3">
+                <Text className="text-3xl font-bold text-primary">
+                  {user?.username?.charAt(0).toUpperCase() || 'U'}
+                </Text>
+              </View>
+              <View className="absolute bottom-2 right-0 bg-primary w-6 h-6 rounded-full items-center justify-center">
+                <Edit3 size={12} color="white" />
+              </View>
+            </Pressable>
             <Text className="text-xl font-semibold text-foreground">
               {user?.username || 'User'}
             </Text>
@@ -208,6 +219,17 @@ export default function ProfileScreen() {
 
         {/* Settings */}
         <View className="bg-card rounded-xl border border-border mb-6">
+          <Pressable
+            onPress={() => router.push('/settings')}
+            className="flex-row items-center justify-between p-4 border-b border-border"
+          >
+            <View className="flex-row items-center">
+              <Settings size={20} className="text-foreground" />
+              <Text className="ml-3 text-foreground">Settings</Text>
+            </View>
+            <ChevronRight size={20} className="text-muted-foreground" />
+          </Pressable>
+
           <Pressable
             onPress={toggleTheme}
             className="flex-row items-center justify-between p-4 border-b border-border"
