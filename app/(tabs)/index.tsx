@@ -1,115 +1,270 @@
-import {View, Pressable, Platform} from "react-native";
-import {useScrollToTop} from "@react-navigation/native";
-import {FlashList} from "@shopify/flash-list";
-import {eq} from "drizzle-orm";
-import {Link, Stack} from "expo-router";
-import * as React from "react";
-import {useLiveQuery} from "drizzle-orm/expo-sqlite";
-import {Text} from "@/components/ui/text";
-import {habitTable, type Habit} from "@/db/schema";
-import {Plus} from "@/components/Icons";
-import {useMigrationHelper} from "@/db/drizzle";
-import {useDatabase} from "@/db/provider";
-import {HabitCard} from "@/components/habit";
+import { View, Text, Alert, ScrollView, TextInput, Pressable } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useKeepAwake } from 'expo-keep-awake';
+import { TimerCircle } from '@/components/timer/TimerCircle';
+import { TimerControls } from '@/components/timer/TimerControls';
+import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
+import { DurationPicker } from '@/components/timer/DurationPicker';
+import { TagSelector } from '@/components/timer/TagSelector';
+import { StreakIndicator } from '@/components/gamification/StreakIndicator';
+import { XPProgressBar } from '@/components/gamification/XPProgressBar';
+import { LevelBadge } from '@/components/gamification/LevelBadge';
+import { useTimerStore } from '@/stores/timerStore';
+import { useTagStore } from '@/stores/tagStore';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { useAppState } from '@/hooks/useAppState';
+import { useHaptics } from '@/hooks/useHaptics';
 
-export default function Home() {
-  const {success, error} = useMigrationHelper();
+export default function TimerScreen() {
+  const {
+    isRunning,
+    isPaused,
+    sessionType,
+    stats,
+    selectedTagId,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    tick,
+    fetchStats,
+    setTagId,
+  } = useTimerStore();
 
-  if (error) {
-    return (
-      <View className="flex-1 gap-5 p-6 bg-secondary/30">
-        <Text>Migration error: {error.message}</Text>
-      </View>
+  const { createTag } = useTagStore();
+  const { defaultFocusDuration, defaultBreakDuration, keepScreenAwake } =
+    useSettingsStore();
+  const haptics = useHaptics();
+
+  // Keep screen awake when timer is running (if enabled in settings)
+  useKeepAwake(isRunning && keepScreenAwake ? 'timer-active' : undefined);
+
+  // Handle app going to background - pause timer
+  const handleBackground = useCallback(() => {
+    if (isRunning && !isPaused) {
+      pauseTimer();
+    }
+  }, [isRunning, isPaused, pauseTimer]);
+
+  useAppState(undefined, handleBackground);
+
+  const [selectedDuration, setSelectedDuration] = useState(25);
+  const [showCreateTag, setShowCreateTag] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#6366F1');
+
+  const TAG_COLORS = [
+    '#EF4444', // Red
+    '#F59E0B', // Amber
+    '#10B981', // Emerald
+    '#06B6D4', // Cyan
+    '#6366F1', // Indigo
+    '#8B5CF6', // Violet
+    '#EC4899', // Pink
+    '#6B7280', // Gray
+  ];
+
+  // Timer tick
+  useEffect(() => {
+    const interval = setInterval(() => {
+      tick();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [tick]);
+
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  // Update duration when session type changes (use settings defaults)
+  useEffect(() => {
+    setSelectedDuration(
+      sessionType === 'focus' ? defaultFocusDuration : defaultBreakDuration
     );
-  }
-  if (!success) {
-    return (
-      <View className="flex-1 gap-5 p-6 bg-secondary/30">
-        <Text>Migration is in progress...</Text>
-      </View>
-    );
-  }
+  }, [sessionType, defaultFocusDuration, defaultBreakDuration]);
 
-  return <ScreenContent />;
-}
+  const handleStart = async () => {
+    try {
+      haptics.medium();
+      await startTimer(selectedDuration, selectedTagId || undefined);
+      haptics.success();
+    } catch (error) {
+      haptics.error();
+      const message =
+        error instanceof Error ? error.message : 'Failed to start session';
+      Alert.alert('Error', message);
+    }
+  };
 
-function ScreenContent() {
-  const {db} = useDatabase();
+  const handleDurationChange = (minutes: number) => {
+    setSelectedDuration(minutes);
+    // Update the timer store duration if not running
+    if (!isRunning) {
+      useTimerStore.setState({
+        timeRemaining: minutes * 60,
+        totalDuration: minutes * 60,
+      });
+    }
+  };
 
-  const ref = React.useRef(null);
-  useScrollToTop(ref);
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) {
+      Alert.alert('Error', 'Please enter a tag name');
+      return;
+    }
 
-  const renderItem = React.useCallback(
-    ({item}: {item: Habit}) => <HabitCard {...item} enableNotifications={item.enableNotifications ?? false} archived={item.archived ?? false} />,
-    [],
-  );
-
-  if (!db) {
-    return (
-      <View className="flex-1 items-center justify-center bg-secondary/30">
-        <Text>Loading database...</Text>
-      </View>
-    );
-  }
-
-  const {data: habits, error} = useLiveQuery(
-    db.select().from(habitTable).where(eq(habitTable.archived, false)),
-  );
-
-  if (error) {
-    return (
-      <View className="flex-1 items-center justify-center bg-secondary/30">
-        <Text className="text-destructive pb-2 ">Error Loading data</Text>
-      </View>
-    )
-  }
+    try {
+      const tag = await createTag(newTagName.trim(), newTagColor);
+      setTagId(tag.id);
+      setShowCreateTag(false);
+      setNewTagName('');
+      setNewTagColor('#6366F1');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create tag';
+      Alert.alert('Error', message);
+    }
+  };
 
   return (
-    <View className="flex flex-col basis-full bg-background  p-8">
-      <Stack.Screen
-        options={{
-          title: "Habits",
-        }}
-      />
-      <FlashList
-        ref={ref}
-        className="native:overflow-hidden rounded-t-lg"
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={() => (
-          <View>
-            <Text className="text-lg"  >Hi There 👋</Text>
-            <Text className="text-sm">
-              This example use sql.js on Web and expo/sqlite on native
-            </Text>
-            {Platform.OS !== "web" && <Text className="text-sm">
-              If you change the schema, you need to run{" "}
-              <Text className="text-sm font-mono text-muted-foreground bg-muted">
-                bun db:generate
-              </Text>
-              <Text className="text-sm px-1">
-                then
-              </Text>
-              <Text className="text-sm font-mono text-muted-foreground bg-muted">
-                bun migrate
-              </Text>
-            </Text>}
+    <SafeAreaView className="flex-1 bg-background">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="flex-1 px-6">
+          {/* Header */}
+          <View className="flex-row justify-between items-center mb-6 mt-4">
+            <StreakIndicator
+              currentStreak={stats.current_streak}
+              longestStreak={stats.longest_streak}
+            />
+            <LevelBadge level={stats.level} />
           </View>
-        )}
-        ItemSeparatorComponent={() => <View className="p-2" />}
-        data={habits}
-        renderItem={renderItem}
-        keyExtractor={(_, index) => `item-${ index }`}
-        ListFooterComponent={<View className="py-4" />}
-      />
-      <View className="absolute web:bottom-20 bottom-10 right-8">
-        <Link href="/create" asChild>
-          <Pressable>
-            <View className="bg-primary justify-center rounded-full h-[45px] w-[45px]">
-              <Plus className="text-background self-center" />
+
+          {/* XP Progress */}
+          <XPProgressBar currentXP={stats.xp} level={stats.level} />
+
+          {/* Session Type Toggle */}
+          <View className="mb-4">
+            <SessionTypeToggle />
+          </View>
+
+          {/* Tag Selector */}
+          <View className="mb-4">
+            <TagSelector
+              selectedTagId={selectedTagId}
+              onSelect={setTagId}
+              disabled={isRunning}
+              onCreateTag={() => setShowCreateTag(true)}
+            />
+          </View>
+
+          {/* Duration Picker */}
+          <View className="mb-6">
+            <DurationPicker
+              value={selectedDuration}
+              onChange={handleDurationChange}
+              disabled={isRunning}
+            />
+          </View>
+
+          {/* Timer */}
+          <View className="items-center mb-6">
+            <TimerCircle />
+          </View>
+
+          {/* Controls */}
+          <TimerControls onStart={handleStart} />
+
+          {/* Stats Summary */}
+          <View className="mt-6 bg-card p-4 rounded-xl border border-border mb-6">
+            <Text className="text-lg font-semibold text-foreground mb-3">
+              Your Stats
+            </Text>
+            <View className="flex-row justify-between">
+              <View>
+                <Text className="text-2xl font-bold text-foreground">
+                  {Math.round(stats.total_focus_hours)}h
+                </Text>
+                <Text className="text-sm text-muted-foreground">
+                  Total Focus
+                </Text>
+              </View>
+              <View>
+                <Text className="text-2xl font-bold text-foreground">
+                  {stats.weekly_sessions}
+                </Text>
+                <Text className="text-sm text-muted-foreground">
+                  This Week
+                </Text>
+              </View>
+              <View>
+                <Text className="text-2xl font-bold text-foreground">
+                  {stats.xp}
+                </Text>
+                <Text className="text-sm text-muted-foreground">Total XP</Text>
+              </View>
             </View>
-          </Pressable>
-        </Link>
-      </View>
-    </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Create Tag Modal */}
+      {showCreateTag && (
+        <View className="absolute inset-0 bg-black/50 items-center justify-center px-6">
+          <View className="bg-card w-full p-6 rounded-xl border border-border">
+            <Text className="text-xl font-semibold text-foreground mb-4">
+              Create Tag
+            </Text>
+
+            <Text className="text-sm text-muted-foreground mb-2">
+              Tag Name
+            </Text>
+            <TextInput
+              value={newTagName}
+              onChangeText={setNewTagName}
+              placeholder="e.g., Work, Study, Exercise"
+              className="bg-background border border-border rounded-lg px-4 py-3 text-foreground mb-4"
+              placeholderTextColor="#9CA3AF"
+            />
+
+            <Text className="text-sm text-muted-foreground mb-2">Color</Text>
+            <View className="flex-row flex-wrap gap-2 mb-4">
+              {TAG_COLORS.map((color) => (
+                <Pressable
+                  key={color}
+                  onPress={() => setNewTagColor(color)}
+                  className={`w-10 h-10 rounded-full ${
+                    newTagColor === color ? 'border-4 border-foreground' : ''
+                  }`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </View>
+
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => {
+                  setShowCreateTag(false);
+                  setNewTagName('');
+                }}
+                className="flex-1 bg-muted py-3 rounded-lg active:opacity-80"
+              >
+                <Text className="text-center font-medium text-foreground">
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleCreateTag}
+                className="flex-1 bg-primary py-3 rounded-lg active:opacity-80"
+              >
+                <Text className="text-center font-medium text-primary-foreground">
+                  Create
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
