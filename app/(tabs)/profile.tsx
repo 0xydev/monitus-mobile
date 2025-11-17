@@ -1,10 +1,11 @@
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { useTimerStore } from '@/stores/timerStore';
+import { achievementService } from '@/services/api/achievements';
 import { router } from 'expo-router';
 import {
-  User,
   Mail,
   Calendar,
   LogOut,
@@ -17,11 +18,41 @@ import {
 import { useColorScheme } from '@/lib/useColorScheme';
 import { setAndroidNavigationBar } from '@/lib/android-navigation-bar';
 import { setItem } from '@/lib/storage';
+import { AchievementCard } from '@/components/gamification/AchievementCard';
+import type { AchievementDefinition, UserAchievement } from '@/types/api';
 
 export default function ProfileScreen() {
   const { user, logout, isLoading } = useAuthStore();
-  const { stats } = useTimerStore();
+  const { stats, fetchStats } = useTimerStore();
   const { colorScheme, setColorScheme } = useColorScheme();
+
+  const [achievements, setAchievements] = useState<
+    Record<string, AchievementDefinition>
+  >({});
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>(
+    []
+  );
+  const [isLoadingAchievements, setIsLoadingAchievements] = useState(true);
+
+  useEffect(() => {
+    loadAchievements();
+    fetchStats();
+  }, [fetchStats]);
+
+  const loadAchievements = async () => {
+    try {
+      const [definitions, unlocked] = await Promise.all([
+        achievementService.getDefinitions(),
+        achievementService.getUserAchievements(),
+      ]);
+      setAchievements(definitions);
+      setUserAchievements(unlocked);
+    } catch {
+      // Handle error silently
+    } finally {
+      setIsLoadingAchievements(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -51,6 +82,17 @@ export default function ProfileScreen() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const isAchievementUnlocked = (achievementId: string) => {
+    return userAchievements.some((ua) => ua.achievement_id === achievementId);
+  };
+
+  const getUnlockedAt = (achievementId: string) => {
+    const ua = userAchievements.find(
+      (ua) => ua.achievement_id === achievementId
+    );
+    return ua?.unlocked_at;
   };
 
   return (
@@ -93,7 +135,7 @@ export default function ProfileScreen() {
         {/* Stats Summary */}
         <View className="bg-card p-6 rounded-xl border border-border mb-6">
           <Text className="text-lg font-semibold text-foreground mb-4">
-            Your Achievements
+            Your Stats
           </Text>
           <View className="gap-4">
             <View className="flex-row items-center">
@@ -130,6 +172,38 @@ export default function ProfileScreen() {
               </View>
             </View>
           </View>
+        </View>
+
+        {/* Achievements */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-foreground mb-4">
+            Achievements ({userAchievements.length}/
+            {Object.keys(achievements).length})
+          </Text>
+          {isLoadingAchievements ? (
+            <View className="bg-card p-6 rounded-xl border border-border items-center">
+              <Text className="text-muted-foreground">
+                Loading achievements...
+              </Text>
+            </View>
+          ) : Object.keys(achievements).length === 0 ? (
+            <View className="bg-card p-6 rounded-xl border border-border items-center">
+              <Text className="text-muted-foreground">
+                No achievements available
+              </Text>
+            </View>
+          ) : (
+            <View className="gap-3">
+              {Object.values(achievements).map((achievement) => (
+                <AchievementCard
+                  key={achievement.id}
+                  achievement={achievement}
+                  isUnlocked={isAchievementUnlocked(achievement.id)}
+                  unlockedAt={getUnlockedAt(achievement.id)}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Settings */}

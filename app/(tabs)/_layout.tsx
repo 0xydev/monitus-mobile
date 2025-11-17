@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Timer, BarChart3, Users, User } from 'lucide-react-native';
+import { Timer, BarChart3, Users, User, UsersRound } from 'lucide-react-native';
 import { useColorScheme } from '@/lib/useColorScheme';
 
 export default function TabsLayout() {
@@ -25,6 +25,15 @@ export default function TabsLayout() {
         options={{
           title: 'Timer',
           tabBarIcon: ({ color, size }) => <Timer size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rooms"
+        options={{
+          title: 'Rooms',
+          tabBarIcon: ({ color, size }) => (
+            <UsersRound size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
