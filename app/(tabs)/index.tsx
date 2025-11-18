@@ -2,10 +2,9 @@ import { View, Text, Alert, ScrollView, TextInput, Pressable } from 'react-nativ
 import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
-import { TimerCircle } from '@/components/timer/TimerCircle';
+import { TimerSlider } from '@/components/timer/TimerSlider';
 import { TimerControls } from '@/components/timer/TimerControls';
 import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
-import { CircularSlider } from '@/components/timer/CircularSlider';
 import { TagSelector } from '@/components/timer/TagSelector';
 import { StreakIndicator } from '@/components/gamification/StreakIndicator';
 import { XPProgressBar } from '@/components/gamification/XPProgressBar';
@@ -158,9 +157,9 @@ export default function TimerScreen() {
             />
           </View>
 
-          {/* Circular Slider */}
+          {/* Timer Slider */}
           <View className="mb-6">
-            <CircularSlider
+            <TimerSlider
               value={selectedDuration}
               onChange={handleDurationChange}
               disabled={isRunning}
@@ -169,11 +168,6 @@ export default function TimerScreen() {
               step={5}
               isBreakTime={sessionType === 'break'}
             />
-          </View>
-
-          {/* Timer */}
-          <View className="items-center mb-6">
-            <TimerCircle />
           </View>
 
           {/* Controls */}
