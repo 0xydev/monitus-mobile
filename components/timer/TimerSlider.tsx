@@ -39,18 +39,7 @@ export function TimerSlider({
 
   return (
     <View className="items-center px-4">
-      {/* Value Display */}
-      <View className="mb-6">
-        <Text className="text-7xl font-bold text-primary text-center">
-          {value}
-        </Text>
-        <Text className="text-xl text-muted-foreground text-center">
-          minutes
-        </Text>
-        <Text className="text-sm text-muted-foreground text-center mt-1">
-          {isBreakTime ? 'Break Time' : 'Focus Time'}
-        </Text>
-      </View>
+      {/* Slider */}
 
       {/* Slider */}
       <View className="w-full">
@@ -61,9 +50,9 @@ export function TimerSlider({
           maximumValue={max}
           step={step}
           disabled={disabled}
-          minimumTrackTintColor="#6366F1"
-          maximumTrackTintColor="#374151"
-          thumbTintColor="#6366F1"
+          minimumTrackTintColor="#8B5CF6"
+          maximumTrackTintColor="#27272A"
+          thumbTintColor="#A78BFA"
           style={{ width: '100%', height: 40 }}
         />
 

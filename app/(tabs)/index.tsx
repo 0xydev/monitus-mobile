@@ -2,13 +2,14 @@ import { View, Text, Alert, ScrollView, TextInput, Pressable } from 'react-nativ
 import { useEffect, useState, useCallback } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useKeepAwake } from 'expo-keep-awake';
-import { TimerSlider } from '@/components/timer/TimerSlider';
+
 import { TimerControls } from '@/components/timer/TimerControls';
+import { TimerCircle } from '@/components/timer/TimerCircle';
 import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
 import { TagSelector } from '@/components/timer/TagSelector';
 import { StreakIndicator } from '@/components/gamification/StreakIndicator';
 import { XPProgressBar } from '@/components/gamification/XPProgressBar';
-import { LevelBadge } from '@/components/gamification/LevelBadge';
+
 import { useTimerStore } from '@/stores/timerStore';
 import { useTagStore } from '@/stores/tagStore';
 import { useSettingsStore } from '@/stores/settingsStore';
@@ -63,13 +64,16 @@ export default function TimerScreen() {
     '#6B7280', // Gray
   ];
 
-  // Timer tick
+  // Timer tick - only run when timer is active
   useEffect(() => {
+    if (!isRunning || isPaused) return;
+
     const interval = setInterval(() => {
       tick();
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [tick]);
+  }, [isRunning, isPaused, tick]);
 
   // Fetch stats on mount
   useEffect(() => {
@@ -128,83 +132,77 @@ export default function TimerScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="flex-1 px-6">
-          {/* Header */}
-          <View className="flex-row justify-between items-center mb-6 mt-4">
+      <View className="flex-1 px-6 pb-24">
+        {/* Header: XP & Streak */}
+        <View className="flex-row items-center gap-3 mb-4 mt-2">
+          <View className="flex-1">
+            <XPProgressBar currentXP={stats.xp} level={stats.level} compact />
+          </View>
+          <View className="shrink-0">
             <StreakIndicator
               currentStreak={stats.current_streak}
               longestStreak={stats.longest_streak}
             />
-            <LevelBadge level={stats.level} />
-          </View>
-
-          {/* XP Progress */}
-          <XPProgressBar currentXP={stats.xp} level={stats.level} />
-
-          {/* Session Type Toggle */}
-          <View className="mb-4">
-            <SessionTypeToggle />
-          </View>
-
-          {/* Tag Selector */}
-          <View className="mb-4">
-            <TagSelector
-              selectedTagId={selectedTagId}
-              onSelect={setTagId}
-              disabled={isRunning}
-              onCreateTag={() => setShowCreateTag(true)}
-            />
-          </View>
-
-          {/* Timer Slider */}
-          <View className="mb-6">
-            <TimerSlider
-              value={selectedDuration}
-              onChange={handleDurationChange}
-              disabled={isRunning}
-              min={sessionType === 'break' ? 5 : 15}
-              max={sessionType === 'break' ? 30 : 120}
-              step={5}
-              isBreakTime={sessionType === 'break'}
-            />
-          </View>
-
-          {/* Controls */}
-          <TimerControls onStart={handleStart} />
-
-          {/* Stats Summary */}
-          <View className="mt-6 bg-card p-4 rounded-xl border border-border mb-6">
-            <Text className="text-lg font-semibold text-foreground mb-3">
-              Your Stats
-            </Text>
-            <View className="flex-row justify-between">
-              <View>
-                <Text className="text-2xl font-bold text-foreground">
-                  {Math.round(stats.total_focus_hours)}h
-                </Text>
-                <Text className="text-sm text-muted-foreground">
-                  Total Focus
-                </Text>
-              </View>
-              <View>
-                <Text className="text-2xl font-bold text-foreground">
-                  {stats.weekly_sessions}
-                </Text>
-                <Text className="text-sm text-muted-foreground">
-                  This Week
-                </Text>
-              </View>
-              <View>
-                <Text className="text-2xl font-bold text-foreground">
-                  {stats.xp}
-                </Text>
-                <Text className="text-sm text-muted-foreground">Total XP</Text>
-              </View>
-            </View>
           </View>
         </View>
-      </ScrollView>
+
+        {/* Session Type Toggle */}
+        <View className="mb-2 mt-3">
+          <SessionTypeToggle />
+        </View>
+
+        {/* Tag Selector */}
+        <View className="mb-3">
+          <TagSelector
+            selectedTagId={selectedTagId}
+            onSelect={setTagId}
+            disabled={isRunning}
+            onCreateTag={() => setShowCreateTag(true)}
+          />
+        </View>
+
+        {/* Timer Display - Interactive */}
+        <View className="flex-1 justify-center items-center my-4">
+          <TimerCircle
+            size={340}
+            onDurationChange={handleDurationChange}
+            currentDuration={selectedDuration}
+            min={sessionType === 'break' ? 5 : 15}
+            max={sessionType === 'break' ? 30 : 120}
+          />
+        </View>
+
+        {/* Controls */}
+        <TimerControls onStart={handleStart} />
+      </View>
+
+      {/* Fixed Footer Stats */}
+      <View className="absolute bottom-0 left-0 right-0 bg-card border-t border-border px-6 py-3">
+        <View className="flex-row justify-around">
+          <View className="items-center">
+            <Text className="text-xl font-bold text-foreground">
+              {Math.round(stats.total_focus_hours)}h
+            </Text>
+            <Text className="text-xs text-muted-foreground">
+              Focus
+            </Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-xl font-bold text-foreground">
+              {stats.weekly_sessions}
+            </Text>
+            <Text className="text-xs text-muted-foreground">
+              This Week
+            </Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-xl font-bold text-foreground">
+              {stats.xp}
+            </Text>
+            <Text className="text-xs text-muted-foreground">XP</Text>
+          </View>
+        </View>
+      </View>
 
       {/* Create Tag Modal */}
       {showCreateTag && (
@@ -231,9 +229,8 @@ export default function TimerScreen() {
                 <Pressable
                   key={color}
                   onPress={() => setNewTagColor(color)}
-                  className={`w-10 h-10 rounded-full ${
-                    newTagColor === color ? 'border-4 border-foreground' : ''
-                  }`}
+                  className={`w-10 h-10 rounded-full ${newTagColor === color ? 'border-4 border-foreground' : ''
+                    }`}
                   style={{ backgroundColor: color }}
                 />
               ))}

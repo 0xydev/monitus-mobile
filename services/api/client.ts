@@ -41,6 +41,11 @@ class ApiClient {
   private isRefreshing = false;
   private refreshPromise: Promise<boolean> | null = null;
 
+  // Public method to force a token refresh
+  async forceTokenRefresh(): Promise<boolean> {
+    return this.refreshToken();
+  }
+
   // Public method to refresh token (for WebSocket)
   async ensureFreshToken(): Promise<boolean> {
     const token = await tokenStorage.getToken();

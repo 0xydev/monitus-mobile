@@ -11,11 +11,22 @@ import type {
 export const sessionService = {
   async getActive(): Promise<Session[]> {
     try {
-      const response = await apiClient.request<ApiSuccessResponse<Session[]>>(
-        `${endpoints.sessions}?state=in_progress`
+      // GET /sessions returns {data: {sessions: [], page, limit, total}}
+      console.log('[SessionService] Fetching sessions with limit=100...');
+      const response = await apiClient.request<ApiSuccessResponse<PaginatedSessionsResponse>>(
+        `${endpoints.sessions}?limit=100`
       );
-      return response.data || [];
-    } catch {
+      console.log('[SessionService] Raw response:', JSON.stringify(response));
+
+      const sessions = response?.data?.sessions || [];
+      console.log('[SessionService] Sessions array length:', sessions.length);
+
+      // Filter for incomplete sessions
+      const incomplete = sessions.filter(s => !s.completed);
+      console.log('[SessionService] Incomplete sessions:', incomplete.length, incomplete.map(s => ({ id: s.id, completed: s.completed })));
+      return incomplete;
+    } catch (error) {
+      console.error('[SessionService] Error fetching sessions:', error);
       return [];
     }
   },

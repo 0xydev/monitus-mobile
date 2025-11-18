@@ -146,6 +146,7 @@ export default function RoomDetailScreen() {
 
   const isCreator = room && user && room.creator_id === user.id;
   const isParticipant = participants.some((p) => p.id === user?.id);
+  const canControl = isCreator || (participants.length === 1 && isParticipant);
 
   if (isLoading) {
     return (
@@ -217,8 +218,8 @@ export default function RoomDetailScreen() {
           </Text>
         </View>
 
-        {/* Room Controls (Creator only) */}
-        {isCreator && (
+        {/* Room Controls (Creator or Single Participant) */}
+        {canControl && (
           <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-3">
               Room Controls

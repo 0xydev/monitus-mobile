@@ -58,6 +58,33 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
   startTimer: async (durationMinutes, tagId) => {
     set({ isStartingSession: true });
+
+    const forceCleanupSessions = async () => {
+      console.log('[Session] Force cleanup: fetching active sessions...');
+      try {
+        const activeSessions = await sessionService.getActive();
+        console.log(`[Session] Found ${activeSessions?.length || 0} active sessions`);
+
+        if (Array.isArray(activeSessions) && activeSessions.length > 0) {
+          // Cancel all sessions in parallel
+          const cancelPromises = activeSessions.map(async (s) => {
+            try {
+              console.log(`[Session] Canceling session ${s.id}...`);
+              await sessionService.cancel(s.id);
+              console.log(`[Session] Successfully canceled ${s.id}`);
+            } catch (err) {
+              console.error(`[Session] Failed to cancel ${s.id}:`, err);
+            }
+          });
+          await Promise.all(cancelPromises);
+          // Give server time to process
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error) {
+        console.error('[Session] Error fetching active sessions:', error);
+      }
+    };
+
     try {
       // Cancel all active sessions (local + any server-side active sessions)
       const { currentSession } = get();
@@ -65,6 +92,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       // First cancel local session if exists
       if (currentSession) {
         try {
+          console.log('[Session] Canceling local session...');
           await sessionService.cancel(currentSession.id);
         } catch {
           // Ignore errors
@@ -72,24 +100,45 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       }
 
       // Then get and cancel any other active sessions from server
-      try {
-        const activeSessions = await sessionService.getActive();
-        for (const session of activeSessions) {
-          try {
-            await sessionService.cancel(session.id);
-          } catch {
-            // Ignore individual cancel errors
+      await forceCleanupSessions();
+
+      let session;
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      while (retryCount <= maxRetries) {
+        try {
+          console.log(`[Session] Starting session (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+          session = await sessionService.start({
+            planned_duration: durationMinutes,
+            session_type: get().sessionType,
+            tag_id: tagId,
+          });
+          console.log('[Session] Session started successfully!');
+          break; // Success!
+        } catch (error: any) {
+          console.error(`[Session] Start failed (attempt ${retryCount + 1}):`, error);
+
+          if (error.message?.includes('active session') || error.error?.includes('active session')) {
+            retryCount++;
+            if (retryCount > maxRetries) {
+              console.error('[Session] Max retries reached, giving up');
+              throw new Error('Failed to start session after multiple attempts. Please try again.');
+            }
+
+            console.log(`[Session] Active session detected, retrying cleanup (${retryCount}/${maxRetries})...`);
+            await forceCleanupSessions();
+            // Additional delay before retry
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } else {
+            throw error;
           }
         }
-      } catch {
-        // Ignore errors fetching active sessions
       }
 
-      const session = await sessionService.start({
-        planned_duration: durationMinutes,
-        session_type: get().sessionType,
-        tag_id: tagId,
-      });
+      if (!session) {
+        throw new Error('Failed to create session');
+      }
 
       const totalSeconds = durationMinutes * 60;
       set({
@@ -115,6 +164,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         trigger: { seconds: totalSeconds, type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL },
       });
     } catch (error) {
+      console.error('[Session] Fatal error:', error);
       set({ isStartingSession: false });
       throw error;
     }

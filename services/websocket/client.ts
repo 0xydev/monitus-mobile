@@ -1,13 +1,6 @@
 import { WS_URL } from '@/lib/api-endpoints';
 import { tokenStorage, apiClient } from '@/services/api/client';
-import { Platform } from 'react-native';
-import type {
-  WebSocketMessage,
-  RoomStatePayload,
-  ParticipantJoinedPayload,
-  ParticipantLeftPayload,
-  SessionCompletedPayload,
-} from '@/types/websocket';
+import type { WebSocketMessage } from '@/types/websocket';
 
 type MessageHandler = (message: WebSocketMessage) => void;
 
@@ -20,39 +13,63 @@ class WebSocketService {
   private roomId: string | null = null;
   private messageHandlers: MessageHandler[] = [];
   private isConnecting = false;
-  private hasAttemptedRefresh = false;
+  private isManuallyDisconnected = false;
 
   async connect(roomId: string): Promise<void> {
-    if (this.isConnecting || (this.ws && this.roomId === roomId)) {
+    if (this.ws?.readyState === WebSocket.OPEN && this.roomId === roomId) {
       return;
     }
 
     this.isConnecting = true;
+    this.isManuallyDisconnected = false;
     this.roomId = roomId;
 
-    // Ensure we have a fresh token before connecting
-    const tokenIsFresh = await apiClient.ensureFreshToken();
-    if (!tokenIsFresh) {
+    // 1. Ensure fresh token
+    try {
+      const tokenIsFresh = await apiClient.ensureFreshToken();
+      if (!tokenIsFresh) throw new Error('Failed to refresh authentication token');
+    } catch (error) {
       this.isConnecting = false;
-      throw new Error('Failed to refresh authentication token');
+      throw error;
     }
 
+    // 2. Attempt connection with retry logic for 401s
+    return this.establishConnection(roomId);
+  }
+
+  private async establishConnection(roomId: string, isRetry = false): Promise<void> {
     const token = await tokenStorage.getToken();
-    if (!token) {
-      this.isConnecting = false;
-      throw new Error('No auth token available');
-    }
+    if (!token) throw new Error('No auth token available');
 
-    // Backend expects token as query parameter for all platforms
-    const url = `${WS_URL}?room_id=${roomId}&token=${token}`;
+    // Debug log: Show token tail to verify if it changes on retry
+    const tokenTail = token.slice(-10);
+    console.log(`Establishing WS connection (Retry: ${isRetry}). Token tail: ...${tokenTail}`);
+
+    // Use Authorization header instead of query param
+    const url = `${WS_URL}?room_id=${roomId}`;
 
     return new Promise((resolve, reject) => {
       try {
-        this.ws = new WebSocket(url);
+        // Close existing if any
+        if (this.ws) {
+          this.ws.onclose = null; // Prevent triggering old handlers
+          this.ws.close();
+        }
+
+        // Pass token in headers (React Native specific)
+        // @ts-ignore - React Native WebSocket supports 3rd argument for options
+        this.ws = new WebSocket(url, null, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Origin: 'https://app.monitus.io',
+          },
+        });
 
         const timeout = setTimeout(() => {
-          this.isConnecting = false;
-          reject(new Error('WebSocket connection timeout'));
+          if (this.isConnecting) {
+            this.isConnecting = false;
+            reject(new Error('WebSocket connection timeout'));
+          }
         }, 10000);
 
         this.ws.onopen = () => {
@@ -74,38 +91,51 @@ class WebSocketService {
         };
 
         this.ws.onerror = (error) => {
-          clearTimeout(timeout);
-          console.error('WebSocket error:', error);
-          this.isConnecting = false;
+          // Suppress error log if we are connecting (likely 401 which onclose will handle)
+          if (!this.isConnecting) {
+             console.error('WebSocket error:', error);
+          }
         };
 
-        this.ws.onclose = (event) => {
+        this.ws.onclose = async (event) => {
           clearTimeout(timeout);
-          console.log('WebSocket closed:', event.code, event.reason);
-          this.isConnecting = false;
           this.stopPingInterval();
 
-          // If 401 Unauthorized, try token refresh before reconnecting
+          console.log(`WebSocket closed. Code: ${event.code}, Reason: "${event.reason}"`);
+
+          // Handle Auth Failure (401/403)
+          // 1008 = Policy Violation (often used for auth failure)
           if (event.code === 1008 || event.reason?.includes('401') || event.reason?.includes('403')) {
-            if (!this.hasAttemptedRefresh) {
-              this.hasAttemptedRefresh = true;
-              console.log('WebSocket auth failed, refreshing token...');
-              apiClient.ensureFreshToken().then((success) => {
-                if (success && this.roomId) {
-                  console.log('Token refreshed, reconnecting...');
-                  this.hasAttemptedRefresh = false;
-                  this.connect(this.roomId).catch(console.error);
-                } else {
-                  console.error('Token refresh failed');
-                  this.hasAttemptedRefresh = false;
+            if (!isRetry) {
+              console.log('WebSocket auth failed, forcing token refresh...');
+              try {
+                // Force a refresh because the current token might be valid for HTTP but rejected by WS
+                const success = await apiClient.forceTokenRefresh();
+                if (success) {
+                  console.log('Token refresh successful, retrying connection...');
+                  // Recursive retry, but await it to resolve the ORIGINAL promise
+                  await this.establishConnection(roomId, true);
+                  resolve(); // Resolve original promise on success
+                  return;
                 }
-              });
+              } catch (e) {
+                console.error('Token refresh failed during WS connect:', e);
+              }
             } else {
-              console.error('Already attempted token refresh, giving up');
-              this.hasAttemptedRefresh = false;
+              console.error('Retry connection also failed. Giving up.');
             }
+            // If retry failed or already retried
+            this.isConnecting = false;
+            reject(new Error(`Authentication failed (Code: ${event.code}, Reason: ${event.reason})`));
           } else {
-            this.attemptReconnect();
+            // Normal close or other error
+            if (this.isConnecting) {
+              this.isConnecting = false;
+              reject(new Error(`WebSocket closed with code ${event.code}`));
+            } else if (!this.isManuallyDisconnected) {
+              console.log('WebSocket closed unexpectedly, reconnecting...');
+              this.attemptReconnect();
+            }
           }
         };
       } catch (error) {
@@ -116,14 +146,12 @@ class WebSocketService {
   }
 
   private handleMessage(message: WebSocketMessage) {
-    // Notify all registered handlers
     for (const handler of this.messageHandlers) {
       handler(message);
     }
   }
 
   private startPingInterval() {
-    // Ping every 54 seconds (server expects within 60s)
     this.pingInterval = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type: 'ping' }));
@@ -145,14 +173,14 @@ class WebSocketService {
       return;
     }
 
-    const delay = Math.pow(2, this.reconnectAttempts) * 1000; // Exponential backoff
+    const delay = Math.pow(2, this.reconnectAttempts) * 1000;
     this.reconnectAttempts++;
 
     console.log(`Attempting reconnect in ${delay}ms...`);
 
     this.reconnectTimeout = setTimeout(() => {
-      if (this.roomId) {
-        this.connect(this.roomId).catch(console.error);
+      if (this.roomId && !this.isManuallyDisconnected) {
+        this.establishConnection(this.roomId).catch(console.error);
       }
     }, delay);
   }
@@ -173,12 +201,16 @@ class WebSocketService {
   }
 
   disconnect() {
+    this.isManuallyDisconnected = true;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
     this.stopPingInterval();
-    this.ws?.close();
+    if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.close();
+    }
     this.ws = null;
     this.roomId = null;
     this.reconnectAttempts = 0;
