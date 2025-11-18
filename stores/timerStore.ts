@@ -59,14 +59,30 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   startTimer: async (durationMinutes, tagId) => {
     set({ isStartingSession: true });
     try {
-      // If there's an existing session, cancel it first
+      // Cancel all active sessions (local + any server-side active sessions)
       const { currentSession } = get();
+
+      // First cancel local session if exists
       if (currentSession) {
         try {
           await sessionService.cancel(currentSession.id);
         } catch {
-          // Ignore errors when canceling
+          // Ignore errors
         }
+      }
+
+      // Then get and cancel any other active sessions from server
+      try {
+        const activeSessions = await sessionService.getActive();
+        for (const session of activeSessions) {
+          try {
+            await sessionService.cancel(session.id);
+          } catch {
+            // Ignore individual cancel errors
+          }
+        }
+      } catch {
+        // Ignore errors fetching active sessions
       }
 
       const session = await sessionService.start({

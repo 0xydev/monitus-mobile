@@ -35,21 +35,12 @@ class WebSocketService {
       throw new Error('No auth token available');
     }
 
-    const url = `${WS_URL}?room_id=${roomId}`;
+    // Backend expects token as query parameter for all platforms
+    const url = `${WS_URL}?room_id=${roomId}&token=${token}`;
 
     return new Promise((resolve, reject) => {
       try {
-        // For native, use headers. For web, headers aren't supported so we use query params
-        if (Platform.OS === 'web') {
-          this.ws = new WebSocket(`${url}&token=${token}`);
-        } else {
-          // React Native WebSocket with headers
-          this.ws = new (WebSocket as any)(url, [], {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-        }
+        this.ws = new WebSocket(url);
 
         const timeout = setTimeout(() => {
           this.isConnecting = false;
