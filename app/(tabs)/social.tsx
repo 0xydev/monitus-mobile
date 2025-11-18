@@ -55,14 +55,14 @@ export default function SocialScreen() {
     try {
       if (activeTab === 'leaderboard') {
         const data = await leaderboardService.getGlobal(20);
-        setLeaderboard(data);
+        setLeaderboard(data || []);
       } else if (activeTab === 'friends') {
         const [friendsData, pendingData] = await Promise.all([
           friendshipService.getFriends(),
           friendshipService.getPendingRequests(),
         ]);
-        setFriends(friendsData);
-        setPendingRequests(pendingData);
+        setFriends(friendsData || []);
+        setPendingRequests(pendingData || []);
       }
     } catch (error) {
       console.error('Failed to load social data:', error);

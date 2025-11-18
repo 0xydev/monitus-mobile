@@ -45,11 +45,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     initialize();
-    // Check if onboarding has been completed
+  }, [initialize]);
+
+  // Re-check onboarding status when segments change or on mount
+  useEffect(() => {
     AsyncStorage.getItem('onboarding_completed').then((value) => {
       setHasCompletedOnboarding(value === 'true');
     });
-  }, [initialize]);
+  }, [segments]);
 
   useEffect(() => {
     if (!isInitialized || hasCompletedOnboarding === null) return;

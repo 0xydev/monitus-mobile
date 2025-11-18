@@ -5,7 +5,7 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { TimerCircle } from '@/components/timer/TimerCircle';
 import { TimerControls } from '@/components/timer/TimerControls';
 import { SessionTypeToggle } from '@/components/timer/SessionTypeToggle';
-import { DurationPicker } from '@/components/timer/DurationPicker';
+import { CircularSlider } from '@/components/timer/CircularSlider';
 import { TagSelector } from '@/components/timer/TagSelector';
 import { StreakIndicator } from '@/components/gamification/StreakIndicator';
 import { XPProgressBar } from '@/components/gamification/XPProgressBar';
@@ -158,12 +158,16 @@ export default function TimerScreen() {
             />
           </View>
 
-          {/* Duration Picker */}
+          {/* Circular Slider */}
           <View className="mb-6">
-            <DurationPicker
+            <CircularSlider
               value={selectedDuration}
               onChange={handleDurationChange}
               disabled={isRunning}
+              min={sessionType === 'break' ? 5 : 15}
+              max={sessionType === 'break' ? 30 : 120}
+              step={5}
+              isBreakTime={sessionType === 'break'}
             />
           </View>
 
