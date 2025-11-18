@@ -9,6 +9,17 @@ import type {
 } from '@/types/api';
 
 export const sessionService = {
+  async getActive(): Promise<Session[]> {
+    try {
+      const response = await apiClient.request<ApiSuccessResponse<Session[]>>(
+        `${endpoints.sessions}?state=in_progress`
+      );
+      return response.data || [];
+    } catch {
+      return [];
+    }
+  },
+
   async start(data: StartSessionRequest): Promise<Session> {
     const response = await apiClient.request<ApiSuccessResponse<Session>>(
       endpoints.sessions,
