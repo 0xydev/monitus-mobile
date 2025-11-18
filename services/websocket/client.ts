@@ -1,5 +1,5 @@
 import { WS_URL } from '@/lib/api-endpoints';
-import { tokenStorage } from '@/services/api/client';
+import { tokenStorage, apiClient } from '@/services/api/client';
 import { Platform } from 'react-native';
 import type {
   WebSocketMessage,
@@ -20,6 +20,7 @@ class WebSocketService {
   private roomId: string | null = null;
   private messageHandlers: MessageHandler[] = [];
   private isConnecting = false;
+  private hasAttemptedRefresh = false;
 
   async connect(roomId: string): Promise<void> {
     if (this.isConnecting || (this.ws && this.roomId === roomId)) {
@@ -28,6 +29,13 @@ class WebSocketService {
 
     this.isConnecting = true;
     this.roomId = roomId;
+
+    // Ensure we have a fresh token before connecting
+    const tokenIsFresh = await apiClient.ensureFreshToken();
+    if (!tokenIsFresh) {
+      this.isConnecting = false;
+      throw new Error('Failed to refresh authentication token');
+    }
 
     const token = await tokenStorage.getToken();
     if (!token) {
@@ -76,7 +84,29 @@ class WebSocketService {
           console.log('WebSocket closed:', event.code, event.reason);
           this.isConnecting = false;
           this.stopPingInterval();
-          this.attemptReconnect();
+
+          // If 401 Unauthorized, try token refresh before reconnecting
+          if (event.code === 1008 || event.reason?.includes('401') || event.reason?.includes('403')) {
+            if (!this.hasAttemptedRefresh) {
+              this.hasAttemptedRefresh = true;
+              console.log('WebSocket auth failed, refreshing token...');
+              apiClient.ensureFreshToken().then((success) => {
+                if (success && this.roomId) {
+                  console.log('Token refreshed, reconnecting...');
+                  this.hasAttemptedRefresh = false;
+                  this.connect(this.roomId).catch(console.error);
+                } else {
+                  console.error('Token refresh failed');
+                  this.hasAttemptedRefresh = false;
+                }
+              });
+            } else {
+              console.error('Already attempted token refresh, giving up');
+              this.hasAttemptedRefresh = false;
+            }
+          } else {
+            this.attemptReconnect();
+          }
         };
       } catch (error) {
         this.isConnecting = false;

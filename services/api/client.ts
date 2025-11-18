@@ -41,6 +41,22 @@ class ApiClient {
   private isRefreshing = false;
   private refreshPromise: Promise<boolean> | null = null;
 
+  // Public method to refresh token (for WebSocket)
+  async ensureFreshToken(): Promise<boolean> {
+    const token = await tokenStorage.getToken();
+    if (!token) return false;
+
+    // Try to verify token by calling /auth/me
+    // If it fails with 401, it will automatically refresh
+    try {
+      await this.request('/auth/me');
+      return true;
+    } catch (error) {
+      // If still failing after refresh attempt, return false
+      return false;
+    }
+  }
+
   async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
     const { method = 'GET', body, headers = {}, skipAuth = false } = config;
 
@@ -82,8 +98,13 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
+      console.error('API Error:', {
+        endpoint,
+        status: response.status,
+        error,
+      });
       throw new Error(
-        error.error || `Request failed with status ${response.status}`
+        error.error || error.message || `Request failed with status ${response.status}`
       );
     }
 
