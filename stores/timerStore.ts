@@ -59,6 +59,16 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   startTimer: async (durationMinutes, tagId) => {
     set({ isStartingSession: true });
     try {
+      // If there's an existing session, cancel it first
+      const { currentSession } = get();
+      if (currentSession) {
+        try {
+          await sessionService.cancel(currentSession.id);
+        } catch {
+          // Ignore errors when canceling
+        }
+      }
+
       const session = await sessionService.start({
         planned_duration: durationMinutes,
         session_type: get().sessionType,
